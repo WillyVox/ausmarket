@@ -6,24 +6,22 @@ export async function generateMetadata({
 }: {
   params: { pair: string };
 }): Promise<Metadata> {
-  const { pair } = (await params);
-  const pairUpper = pair.toUpperCase();
+  const pair = params.pair.toUpperCase();
   return {
-    title: `${pairUpper.slice(0, 3)}/${pairUpper.slice(3)} Exchange Rate Today`,
-    description: `${pairUpper} reference exchange rate and market information.`,
+    title: `${pair.slice(0, 3)}/${pair.slice(3)} Exchange Rate Today`,
+    description: `${pair} reference exchange rate and market information.`,
   };
 }
 
 export default async function ForexPairPage({ params }: { params: { pair: string } }) {
-  const { pair } = (await params);
-  const pairUpper = pair.toUpperCase();
+  const pair = params.pair.toUpperCase();
   const provider = getMarketDataProvider();
-  const rate = await provider.getForexRate(pairUpper);
+  const rate = await provider.getForexRate(pair);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-navy-900">
-        {pairUpper.slice(0, 3)}/{pairUpper.slice(3)}
+        {pair.slice(0, 3)}/{pair.slice(3)}
       </h1>
       <p className="text-sm text-slate-500">
         {rate?.status ?? "unavailable"} · source: {rate?.source ?? "—"}
