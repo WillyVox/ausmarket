@@ -15,6 +15,18 @@ launch.
   clearly-labelled sample data with `status: "UNAVAILABLE"` semantics
   so nothing masquerades as live.
 
+## Live data status
+
+- **Crypto (BTC, ETH, SOL, XRP, BNB): LIVE**, via CoinGecko's free
+  keyless API (`src/lib/market-data/coingecko-provider.ts`), fetched
+  through `CompositeMarketDataProvider` (`src/lib/market-data/index.ts`).
+  Revalidated every 60s. Falls back to the labelled mock if CoinGecko
+  errors or rate-limits — never fabricates a price.
+- **Everything else (ASX stocks/indices, forex): still mock**, clearly
+  labelled `status: "UNAVAILABLE"`. Wiring up a real feed for these is
+  a one-file change in `CompositeMarketDataProvider` — add a method
+  override the same way `getCryptoPrice` does, no page changes needed.
+
 ## What's in this slice
 
 - Project scaffold (`package.json`, `tsconfig.json`, Tailwind config)
@@ -22,7 +34,7 @@ launch.
   crypto, news, brokers, affiliate partners/clicks, ads, articles,
   users/watchlists, audit log)
 - Homepage with a market snapshot section wired to the provider
-  abstraction (mock data, clearly labelled)
+  abstraction (crypto card is now live data)
 - One programmatic stock page template (`/stocks/[symbol]`)
 - Compare landing page skeleton (`/compare/brokers`)
 - Affiliate redirect route (`/go/[partner]`) with a domain allowlist,

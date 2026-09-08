@@ -1,4 +1,4 @@
-import { getMarketDataProvider } from "@/lib/market-data/mock-provider";
+import { getMarketDataProvider } from "@/lib/market-data";
 import type { Quote } from "@/lib/market-data/provider";
 
 export default async function HomePage() {

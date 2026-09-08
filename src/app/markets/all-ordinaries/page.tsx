@@ -1,4 +1,4 @@
-import { getMarketDataProvider } from "@/lib/market-data/mock-provider";
+import { getMarketDataProvider } from "@/lib/market-data";
 
 export const metadata = {
   title: "All Ordinaries Today",

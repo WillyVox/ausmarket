@@ -1,4 +1,4 @@
-import { getMarketDataProvider } from "@/lib/market-data/mock-provider";
+import { getMarketDataProvider } from "@/lib/market-data";
 
 export const metadata = {
   title: "ASX 200 Today | Australian Stock Market",

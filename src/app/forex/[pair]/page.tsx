@@ -1,4 +1,4 @@
-import { getMarketDataProvider } from "@/lib/market-data/mock-provider";
+import { getMarketDataProvider } from "@/lib/market-data";
 import type { Metadata } from "next";
 
 export async function generateMetadata({

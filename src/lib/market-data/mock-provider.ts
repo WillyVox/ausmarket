@@ -86,12 +86,8 @@ export class MockMarketDataProvider implements MarketDataProvider {
   }
 }
 
-let cached: MarketDataProvider | null = null;
-
-export function getMarketDataProvider(): MarketDataProvider {
-  if (cached) return cached;
-  // Future: branch on env.MARKET_DATA_PROVIDER to select a real
-  // implementation (licensed ASX feed, Twelve Data, CoinGecko, etc).
-  cached = new MockMarketDataProvider();
-  return cached;
-}
+// NOTE: the factory used by pages lives in ./index.ts
+// (getMarketDataProvider), which wraps this mock behind the
+// CompositeMarketDataProvider. Don't instantiate MockMarketDataProvider
+// directly from a page — go through the composite so real sources
+// (like CoinGecko for crypto) are picked up automatically.
