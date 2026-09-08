@@ -35,7 +35,7 @@ export async function listWatchlistItems(userId: string): Promise<WatchlistItemR
     include: { items: { orderBy: { addedAt: "desc" } } },
   });
   if (!watchlist) return [];
-  return watchlist.items.map((item) => ({
+  return watchlist.items.map((item: { id: string; symbolType: string; symbol: string; addedAt: Date }) => ({
     id: item.id,
     symbolType: item.symbolType as WatchlistSymbolType,
     symbol: item.symbol,

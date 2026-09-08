@@ -21,13 +21,15 @@ export async function listAlerts(userId: string): Promise<AlertRecord[]> {
     where: { userId },
     orderBy: { createdAt: "desc" },
   });
-  return alerts.map((a) => ({
-    id: a.id,
-    symbol: a.symbol,
-    condition: a.condition,
-    active: a.active,
-    createdAt: a.createdAt.toISOString(),
-  }));
+  return alerts.map(
+    (a: { id: string; symbol: string; condition: string; active: boolean; createdAt: Date }) => ({
+      id: a.id,
+      symbol: a.symbol,
+      condition: a.condition,
+      active: a.active,
+      createdAt: a.createdAt.toISOString(),
+    })
+  );
 }
 
 export async function createAlert(

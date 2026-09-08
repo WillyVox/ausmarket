@@ -10,7 +10,10 @@ export async function listSavedArticles(userId: string): Promise<SavedArticleRec
     where: { userId },
     orderBy: { savedAt: "desc" },
   });
-  return rows.map((r) => ({ articleSlug: r.articleSlug, savedAt: r.savedAt.toISOString() }));
+  return rows.map((r: { articleSlug: string; savedAt: Date }) => ({
+    articleSlug: r.articleSlug,
+    savedAt: r.savedAt.toISOString(),
+  }));
 }
 
 export async function isArticleSaved(userId: string, articleSlug: string): Promise<boolean> {
