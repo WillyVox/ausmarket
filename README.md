@@ -1,7 +1,7 @@
 # Australian Market Intelligence + Trading Platform Comparison
 
-Phase 1 (Foundation) scaffold. This is the first slice of a much larger
-build — see `docs/roadmap.md` for the full phase plan and
+Phase 4 (Commercial Engine) slice, building on Phases 1–3. See
+`docs/roadmap.md` for the full phase plan and
 `docs/compliance-flags.md` for items that need legal sign-off before
 launch.
 
@@ -37,60 +37,94 @@ launch.
   before relying on it beyond local testing. Indices (ASX 200, All
   Ordinaries) are still mock regardless.
 
-## What's in this slice (Phase 3 — SEO Engine + Comparison Data Layer)
+## What's in this slice (Phase 4 — Commercial Engine)
 
-Building on Phase 1 (foundation) and Phase 2 (live crypto/forex/stock
-data), this pass:
+Building on Phase 3 (SEO engine + static comparison data), this pass
+moves the comparison content into the database and wires up real
+click tracking:
 
-- Fixed two route gaps found during Phase 2 testing:
-  - `/stocks` was 404ing (no index page) — added a search + popular-
-    stocks index at `src/app/stocks/page.tsx`, backed by
-    `src/lib/stocks/data.ts`, and a matching search box on the homepage.
-  - `/compare`, `/compare/share-trading-platforms`,
-    `/compare/forex-platforms` and `/compare/crypto-exchanges` were
-    linked from CTAs across the site but didn't exist — all four now
-    exist, alongside a refactored `/compare/brokers`.
-- Added a shared comparison data layer, `src/lib/brokers/data.ts`
-  (`BROKERS`, `EXCHANGES`) — every `/compare/*`, `/brokers/[slug]`,
-  `/exchanges/[slug]` page and the `/go/[partner]` redirect now read
-  from this one module instead of duplicated hardcoded rows.
-  **All figures in it are placeholders pending legal/editorial
-  review** — see `docs/compliance-flags.md` item 7.
-- Added `/brokers/[slug]` and `/exchanges/[slug]` detail pages:
-  overview, fees, platform features, pros/considerations, regulatory
-  info, sources, and alternatives — not thin affiliate landers.
-- Found the same "linked but not built" pattern in two more places
-  and fixed both: `/learn/[slug]` was missing 3 of the 5 articles the
-  `/learn` index links to (all 5 now have real, neutral,
-  Australia-specific content), and `/tools` linked to 5 calculators
-  that didn't exist (added real compound-interest and
-  inflation calculators; the rest now show an honest "coming soon"
-  page instead of a dead link).
-- SEO technical layer: `sitemap.ts`, `robots.ts`, `metadataBase` +
-  OpenGraph/Twitter defaults on the root layout, Organization +
-  WebSite JSON-LD site-wide, Article JSON-LD on learn pages.
-- Cross-linking between learn articles, tools, and comparison pages.
+- **Schema**: extended `Broker` with the fields the app actually
+  renders (`category`, `pros`, `considerations`, `sources`,
+  `feesSummary`, `affiliateSlug`); made `lastVerifiedAt` and
+  `minimumDeposit` nullable so "Not verified" is a real null value,
+  never a fabricated date/figure; made the unused structured
+  `fees`/`brokerage` Json fields optional so seeding doesn't require
+  inventing fake structured data. Added a new `Exchange` model —
+  there wasn't one before, exchanges only ever lived in the static
+  array.
+- **Decoupled `AffiliateClick` from `AffiliatePartner`**: real
+  partner content now lives in `Broker`/`Exchange`, two separate
+  tables with no clean single foreign key between them, so
+  `AffiliateClick` stores a plain `partnerType` + `partnerSlug` pair
+  instead of a relation. `AffiliatePartner` is left in the schema,
+  unused, in case a future phase wants one consolidated partner table
+  — see `docs/compliance-flags.md` item 8.
+- **`prisma/seed.ts`**: loads the exact static broker/exchange content
+  (moved from `src/lib/brokers/data.ts` to
+  `src/lib/brokers/static-data.ts`) into the database via upsert — no
+  figures changed, just a new home for them. Run with `npm run
+  db:seed` (uses `tsx`, added as a dev dependency).
+- **`src/lib/brokers/repository.ts`**: the only module allowed to
+  query `Broker`/`Exchange`/`AffiliateClick` directly. Every page that
+  used to import the static arrays now calls this instead — same
+  fail-open-to-a-labelled-fallback pattern as `src/lib/market-data`:
+  queries Prisma first, falls back to the bundled static content if
+  the database is unreachable or not yet seeded. A reachable, seeded
+  database that genuinely has no row for a slug still returns a real
+  404 — the fallback only covers "can't reach the DB" or "table is
+  empty," never masks a genuine missing record.
+- **`/go/[partner]`** now resolves partners via the repository and
+  writes a real `AffiliateClick` row on every redirect
+  (fire-and-forget — a failed write never blocks or breaks the
+  redirect to the provider).
+- **`/methodology`** now renders a live "Transparency Snapshot"
+  (platform counts, verified-entry counts, active affiliate link
+  counts, affiliate clicks in the last 30 days), computed from the
+  repository on every request rather than written as static prose. It
+  also honestly reports when it's showing fallback data instead of
+  the live database.
+
+**Not yet built in Phase 4**: real, legally-reviewed fee/feature data
+(every `lastVerifiedAt` is still `null` on purpose), expanding the
+broker/exchange list, an actual scoring algorithm (today's
+methodology page is descriptive + transparency counts, not a computed
+score), and an admin UI for editing rows without touching the seed
+file. See `docs/roadmap.md`.
 
 ## What's deliberately NOT in this slice
 
 Real historical charts, top gainers/losers/movers data, news
 ingestion, the full programmatic stock/forex/crypto template set
 beyond the current popular-stocks list, FAQ schema on tool pages, and
-everything in Phase 4 onward: moving broker/exchange data into
-Prisma, real affiliate click storage, the public `/methodology`
-scoring writeup, auth/watchlists, admin CMS, analytics wiring, ad
-placements. See `docs/roadmap.md`.
+everything in Phase 5 onward: auth/watchlists, admin CMS, analytics
+wiring, ad placements. See `docs/roadmap.md`.
 
 ## Running it
 
 This scaffold isn't `npm install`-able as-is in this environment (no
 network access here to pull dependencies) — it's meant to be dropped
-into a repo, then `npm install && npx prisma migrate dev && npm run dev`.
-Because of that, this session's changes were reviewed manually
-(brace/paren balance across every new file, every internal `href`
-traced against an actual route) rather than machine-verified — run
-`npm run typecheck && npm run lint` yourself before trusting it fully.
+into a repo, then:
 
+```
+npm install
+npx prisma migrate dev --name init
+npm run db:seed
+npm run dev
+```
+
+Without a running `DATABASE_URL`, the app still works — every broker/
+exchange page falls back to the bundled static content automatically
+and logs a warning explaining why (see `src/lib/brokers/repository.ts`).
+
+Because of the lack of network access in this environment, this
+session's changes were reviewed manually (brace/paren balance across
+every new/edited file, every internal `href` traced against an actual
+route, every import path checked for the old `@/lib/brokers/data`
+path) rather than machine-verified — run `npm run typecheck && npm
+run lint` yourself before trusting it fully, and specifically test:
+`/go/[an affiliate slug from static-data.ts]` redirects correctly,
+`/methodology` renders without a database configured, and `npm run
+db:seed` completes against a real Postgres instance.
 
 # Step by step to run the app locally
 

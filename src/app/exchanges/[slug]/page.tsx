@@ -1,13 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { EXCHANGES, getExchangeBySlug, verifiedLabel } from "@/lib/brokers/data";
+import { getExchanges, getExchangeBySlug, verifiedLabel } from "@/lib/brokers/repository";
 
-export function generateStaticParams() {
-  return EXCHANGES.map((e) => ({ slug: e.slug }));
+export async function generateStaticParams() {
+  const exchanges = await getExchanges();
+  return exchanges.map((e) => ({ slug: e.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const exchange = getExchangeBySlug(params.slug);
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const exchange = await getExchangeBySlug(params.slug);
   if (!exchange) return { title: "Exchange not found" };
   return {
     title: `${exchange.name} Review & Fees`,
@@ -15,11 +16,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ExchangePage({ params }: { params: { slug: string } }) {
-  const exchange = getExchangeBySlug(params.slug);
+export default async function ExchangePage({ params }: { params: { slug: string } }) {
+  const exchange = await getExchangeBySlug(params.slug);
   if (!exchange) notFound();
 
-  const alternatives = EXCHANGES.filter((e) => e.slug !== exchange.slug);
+  const allExchanges = await getExchanges();
+  const alternatives = allExchanges.filter((e) => e.slug !== exchange.slug);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">

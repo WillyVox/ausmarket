@@ -216,35 +216,73 @@ model EconomicEvent {
 }
 
 // ---------- Brokers / Exchanges / Affiliate ----------
+//
+// Broker and Exchange are the real content tables behind every
+// /compare/*, /brokers/[slug] and /exchanges/[slug] page — see
+// src/lib/brokers/repository.ts, which is the only code allowed to
+// query them directly. AffiliatePartner (below) predates this and is
+// currently unused: it was scaffolded in Phase 1 before Broker/
+// Exchange existed, and nothing reads or writes it. Left in place
+// rather than dropped in case a future phase wants a single
+// consolidated partner table across categories, but AffiliateClick no
+// longer references it (see note on that model).
 
 model Broker {
-  id                     String   @id @default(cuid())
+  id                     String    @id @default(cuid())
   name                   String
-  slug                   String   @unique
+  slug                   String    @unique
   logo                   String?
   description            String
-  country                String   @default("Australia")
+  country                String    @default("Australia")
+  category               String[] // "share_trading" | "forex" — a broker can be both
   products               String[]
   markets                String[]
-  fees                   Json
-  brokerage              Json
+  feesSummary            String // short human-readable status, e.g. "Not verified — check provider"
+  fees                   Json? // structured fee schedule, once a licensed/verified source exists
+  brokerage              Json?
   spreads                Json?
-  minimumDeposit         Decimal?
+  minimumDeposit         Decimal? // null renders as "Not verified" — never fabricate a figure
   platformFeatures       String[]
-  mobileApp              Boolean  @default(true)
+  mobileApp              Boolean   @default(true)
   researchTools          String[]
   charting               String[]
-  demoAccount            Boolean  @default(false)
+  demoAccount            Boolean   @default(false)
   fundingMethods         String[]
   customerSupport        String[]
+  pros                   String[]
+  considerations         String[]
   regulatoryInformation  String
   websiteUrl             String
   affiliateUrl           String?
-  affiliateStatus        String   @default("none") // none | pending | active
+  affiliateSlug          String?   @unique // matches the /go/[partner] path segment
+  affiliateStatus        String    @default("none") // none | pending | active
   affiliateDisclosure    String?
-  lastVerifiedAt         DateTime
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  sources                Json      @default("[]") // [{ label, url }] — every factual claim must trace to one of these
+  lastVerifiedAt         DateTime? // null renders as "Not verified" — never fabricate a date
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model Exchange {
+  id                     String    @id @default(cuid())
+  name                   String
+  slug                   String    @unique
+  logo                   String?
+  description            String
+  country                String    @default("Australia")
+  productsSupported      String[]
+  feesSummary            String
+  fees                   Json?
+  regulatoryInformation  String
+  websiteUrl             String
+  affiliateUrl           String?
+  affiliateSlug          String?   @unique
+  affiliateStatus        String    @default("none")
+  affiliateDisclosure    String?
+  sources                Json      @default("[]")
+  lastVerifiedAt         DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 }
 
 model AffiliatePartner {
@@ -268,14 +306,21 @@ model AffiliatePartner {
   lastVerifiedAt        DateTime
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
-  clicks                AffiliateClick[]
 }
 
 model AffiliateClick {
-  id          String           @id @default(cuid())
-  partnerId   String
-  partner     AffiliatePartner @relation(fields: [partnerId], references: [id])
-  timestamp   DateTime         @default(now())
+  id          String   @id @default(cuid())
+  // Deliberately NOT a foreign key to AffiliatePartner: real partner
+  // content lives in Broker/Exchange, two separate tables, and Prisma
+  // has no clean polymorphic relation across them. partnerType +
+  // partnerSlug is a loose reference the repository layer resolves in
+  // application code — see recordAffiliateClick() in
+  // src/lib/brokers/repository.ts. This also means a click row
+  // survives even if the referenced broker/exchange is later removed,
+  // which is the right behaviour for an audit trail.
+  partnerType String // "broker" | "exchange"
+  partnerSlug String
+  timestamp   DateTime @default(now())
   referrer    String?
   landingPage String
   placement   String
@@ -283,9 +328,13 @@ model AffiliateClick {
   deviceType  String?
   country     String?
   sessionId   String?
+
+  @@index([partnerType, partnerSlug])
+  @@index([timestamp])
 }
 
 // ---------- Content ----------
+
 
 model Article {
   id          String       @id @default(cuid())

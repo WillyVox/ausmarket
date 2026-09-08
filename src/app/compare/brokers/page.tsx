@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BROKERS } from "@/lib/brokers/data";
+import { getBrokers } from "@/lib/brokers/repository";
 import { ComparisonTable } from "@/components/comparison-table";
 
 export const metadata: Metadata = {
@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     "Compare Australian share trading and forex platforms by products, pricing, features and market access.",
 };
 
-export default function CompareBrokersPage() {
+export default async function CompareBrokersPage() {
+  const brokers = await getBrokers();
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-navy-900">
@@ -22,7 +23,7 @@ export default function CompareBrokersPage() {
       </p>
 
       <ComparisonTable
-        rows={BROKERS.map((b) => ({
+        rows={brokers.map((b) => ({
           slug: b.slug,
           name: b.name,
           feesSummary: b.feesSummary,

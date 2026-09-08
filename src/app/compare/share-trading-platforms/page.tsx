@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getBrokersByCategory } from "@/lib/brokers/data";
+import { getBrokersByCategory } from "@/lib/brokers/repository";
 import { ComparisonTable } from "@/components/comparison-table";
 
 export const metadata: Metadata = {
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
     "Compare ASX and international share trading platforms available to Australian investors.",
 };
 
-export default function ShareTradingPlatformsPage() {
-  const brokers = getBrokersByCategory("share_trading");
+export default async function ShareTradingPlatformsPage() {
+  const brokers = await getBrokersByCategory("share_trading");
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-navy-900">

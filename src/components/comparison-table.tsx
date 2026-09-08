@@ -1,4 +1,4 @@
-import { verifiedLabel } from "@/lib/brokers/data";
+import { verifiedLabel } from "@/lib/brokers/repository";
 
 interface ComparisonRow {
   slug: string;

@@ -1,24 +1,24 @@
-// Single source of truth for comparison content. Every /compare/*,
-// /brokers/[slug] and /exchanges/[slug] page reads from here instead
-// of hardcoding rows — this is the seam Phase 4 swaps for a real
-// Prisma-backed Broker/AffiliatePartner table without touching any
-// page component.
+// Fallback + seed content. Two consumers read this file:
 //
-// IMPORTANT — LEGAL REVIEW REQUIRED before launch:
-// The fee/feature figures below are illustrative placeholders, not
-// verified current data. Nothing here should go live until each row
-// has been checked against the provider's current, published terms
-// and given a real lastVerifiedAt date. Per the project's own rule,
-// affiliate commission must never influence ranking or the score
-// shown — `priority` below controls only affiliate-link routing
-// metadata, not display order or a "best" claim.
+// 1. prisma/seed.ts loads it into the database, unchanged — this is
+//    the ONE-TIME source of truth for the initial Broker/Exchange
+//    rows. After seeding, the database is the source of truth; this
+//    file becomes a fallback only.
+// 2. src/lib/brokers/repository.ts falls back to it when the database
+//    is unreachable or not yet seeded, the same fail-open-to-a-
+//    labelled-fallback pattern used by src/lib/market-data — so local
+//    dev and this sandbox (no DATABASE_URL) still render real pages.
+//
+// LEGAL REVIEW REQUIRED before launch (see docs/compliance-flags.md
+// item 7): every fee, feature, pro/consideration and regulatory
+// description below is an illustrative placeholder, not verified
+// current data. lastVerifiedAt is null everywhere on purpose — this
+// must stay null until someone has actually checked each claim
+// against the provider's current published terms.
 
-export type ComparisonCategory =
-  | "share_trading"
-  | "forex"
-  | "crypto_exchange";
+export type ComparisonCategory = "share_trading" | "forex" | "crypto_exchange";
 
-export interface BrokerRecord {
+export interface BrokerSeed {
   slug: string;
   name: string;
   category: ComparisonCategory[];
@@ -27,7 +27,7 @@ export interface BrokerRecord {
   products: string[];
   markets: string[];
   feesSummary: string;
-  minimumDeposit: string;
+  minimumDepositAmount: number | null; // null = not verified, never fabricate a figure
   mobileApp: boolean;
   demoAccount: boolean;
   platformFeatures: string[];
@@ -37,13 +37,10 @@ export interface BrokerRecord {
   websiteUrl: string;
   affiliateSlug: string | null; // matches AFFILIATE_DOMAIN_ALLOWLIST entry via /go/[slug]
   sources: { label: string; url: string }[];
-  lastVerifiedAt: string | null; // null renders as "Not verified"
+  lastVerifiedAt: string | null; // ISO date, or null for "Not verified"
 }
 
-// NOTE: every row here is a placeholder pending legal/editorial
-// verification (see header). Treat every fee, feature and figure as
-// "Not verified" in the UI until lastVerifiedAt is set for real.
-export const BROKERS: BrokerRecord[] = [
+export const BROKER_SEEDS: BrokerSeed[] = [
   {
     slug: "cmc-markets",
     name: "CMC Markets",
@@ -54,7 +51,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["ASX shares", "International shares", "CFDs", "Forex"],
     markets: ["ASX", "US", "UK", "Forex"],
     feesSummary: "Not verified — check provider for current brokerage schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: true,
     platformFeatures: ["Advanced charting", "Research tools", "Demo account"],
@@ -76,7 +73,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["ASX shares", "International shares", "ETFs"],
     markets: ["ASX", "US"],
     feesSummary: "Not verified — check provider for current brokerage schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: false,
     platformFeatures: ["Integration with CommBank accounts", "Research and analysis tools"],
@@ -98,7 +95,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["ASX shares", "US shares"],
     markets: ["ASX", "US"],
     feesSummary: "Not verified — check provider for current brokerage schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: false,
     platformFeatures: ["US market access", "Mobile-first app"],
@@ -120,7 +117,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["ASX shares", "International shares"],
     markets: ["ASX", "US", "select international"],
     feesSummary: "Not verified — historically flat-fee, check current schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: false,
     platformFeatures: ["Flat-fee pricing model", "Community/social investing features"],
@@ -142,7 +139,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["ASX shares", "ETFs", "US shares"],
     markets: ["ASX", "US"],
     feesSummary: "Not verified — check provider for current brokerage schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: false,
     platformFeatures: ["Auto-invest / recurring orders", "Long-term investing focus"],
@@ -164,7 +161,7 @@ export const BROKERS: BrokerRecord[] = [
     products: ["Global shares", "ASX shares", "Forex", "Options", "Futures"],
     markets: ["ASX", "US", "Europe", "Asia", "Forex"],
     feesSummary: "Not verified — tiered/fixed pricing options, check current schedule",
-    minimumDeposit: "Not verified",
+    minimumDepositAmount: null,
     mobileApp: true,
     demoAccount: true,
     platformFeatures: ["Broad global market access", "Professional-grade trading tools"],
@@ -178,7 +175,7 @@ export const BROKERS: BrokerRecord[] = [
   },
 ];
 
-export interface ExchangeRecord {
+export interface ExchangeSeed {
   slug: string;
   name: string;
   description: string;
@@ -192,7 +189,7 @@ export interface ExchangeRecord {
   lastVerifiedAt: string | null;
 }
 
-export const EXCHANGES: ExchangeRecord[] = [
+export const EXCHANGE_SEEDS: ExchangeSeed[] = [
   {
     slug: "binance",
     name: "Binance",
@@ -246,19 +243,3 @@ export const EXCHANGES: ExchangeRecord[] = [
     lastVerifiedAt: null,
   },
 ];
-
-export function getBrokerBySlug(slug: string) {
-  return BROKERS.find((b) => b.slug === slug) ?? null;
-}
-
-export function getExchangeBySlug(slug: string) {
-  return EXCHANGES.find((e) => e.slug === slug) ?? null;
-}
-
-export function getBrokersByCategory(category: ComparisonCategory) {
-  return BROKERS.filter((b) => b.category.includes(category));
-}
-
-export function verifiedLabel(date: string | null): string {
-  return date ?? "Not verified";
-}

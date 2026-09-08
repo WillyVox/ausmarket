@@ -41,14 +41,51 @@ real historical charts, top gainers/losers/movers data, news
 ingestion, full programmatic stock/forex/crypto page templates beyond
 the popular-stocks list, FAQ schema on tool pages.
 
-## Phase 4 — Commercial Engine (next)
-Move `BROKERS`/`EXCHANGES` from the static data module into
-Prisma-backed `Broker`/`AffiliatePartner` tables, populate real
-(legally reviewed) fee/feature data with genuine `lastVerifiedAt`
-dates, wire `/go/[partner]` and `recordClick` to the real
-`AffiliateClick` table, build the public `/methodology` scoring
-system referenced from every comparison page, and expand the broker
-list beyond the current six/four.
+## Phase 4 — Commercial Engine ✅ (this slice)
+- Schema: extended `Broker` with the fields the app actually renders
+  (`category`, `pros`, `considerations`, `sources`, `feesSummary`,
+  `affiliateSlug`), made `lastVerifiedAt` and `minimumDeposit`
+  nullable (never fabricate a date or figure — null renders as "Not
+  verified"), and made the unused structured `fees`/`brokerage` Json
+  fields optional rather than forcing fake data at seed time. Added a
+  new `Exchange` model — there wasn't one before; exchanges only ever
+  lived in the static array.
+- Decoupled `AffiliateClick` from `AffiliatePartner`: real partner
+  content lives in `Broker`/`Exchange` now, two separate tables with
+  no clean single FK between them, so `AffiliateClick` stores a plain
+  `partnerType` + `partnerSlug` pair instead. `AffiliatePartner`
+  itself is left in the schema (unused) rather than dropped, in case
+  a future phase wants one consolidated partner table.
+- `prisma/seed.ts` loads the exact static broker/exchange content
+  (renamed to `src/lib/brokers/static-data.ts`) into the database via
+  upsert — no figures changed, just a new home for them. Run with
+  `npm run db:seed`.
+- `src/lib/brokers/repository.ts` is now the only module allowed to
+  query `Broker`/`Exchange`/`AffiliateClick` directly. Every page that
+  used to import the static arrays now calls this instead. It queries
+  Prisma first and falls back to the bundled static content if the
+  database is unreachable or not yet seeded — the same
+  fail-open-to-a-labelled-fallback pattern as `src/lib/market-data`.
+  A reachable, seeded database that genuinely has no row for a slug
+  still 404s correctly; the fallback only covers "can't reach the DB
+  at all" or "table is empty."
+- `/go/[partner]` now resolves partners via the repository and writes
+  a real `AffiliateClick` row on every redirect (fire-and-forget,
+  never blocks or fails the redirect if the write fails).
+- `/methodology` now renders a live "Transparency Snapshot" — platform
+  counts, how many have a verified check, active affiliate link
+  counts, and affiliate clicks in the last 30 days — computed from the
+  repository on every request (`export const dynamic =
+  "force-dynamic"`), not hand-written prose. It also honestly reports
+  when it's showing fallback data instead of the database.
+
+**Not yet built in Phase 4** (left for later phases): populating real,
+legally-reviewed fee/feature data (every `lastVerifiedAt` is still
+null on purpose — see `docs/compliance-flags.md` item 7), expanding
+the broker/exchange list, an actual scoring algorithm (methodology
+today is descriptive + transparency counts, not a computed score),
+and an admin UI for editing `Broker`/`Exchange` rows without touching
+the seed file directly.
 
 ## Phase 5 — Retention
 Auth.js integration, watchlists, alerts, newsletter signup, saved

@@ -7,12 +7,14 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "lint:check": "npm run typecheck && npm run lint",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev"
+    "prisma:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@next/third-parties": "^16.3.4",
     "@prisma/client": "^5.20.0",
     "@tailwindcss/postcss": "^4.3.3",
     "next": "^16.3.4",

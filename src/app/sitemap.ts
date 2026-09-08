@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BROKERS, EXCHANGES } from "@/lib/brokers/data";
+import { getBrokers, getExchanges } from "@/lib/brokers/repository";
 import { POPULAR_STOCKS } from "@/lib/stocks/data";
 
 // Static + programmatic routes. As real content sources (CMS articles,
@@ -8,7 +8,7 @@ import { POPULAR_STOCKS } from "@/lib/stocks/data";
 // them here — the shape stays the same.
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ausmarket.example.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     "",
     "/markets",
@@ -52,12 +52,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(),
   }));
 
-  const brokerRoutes = BROKERS.map((b) => ({
+  const [brokers, exchanges] = await Promise.all([getBrokers(), getExchanges()]);
+
+  const brokerRoutes = brokers.map((b) => ({
     url: `${SITE_URL}/brokers/${b.slug}`,
     lastModified: new Date(),
   }));
 
-  const exchangeRoutes = EXCHANGES.map((e) => ({
+  const exchangeRoutes = exchanges.map((e) => ({
     url: `${SITE_URL}/exchanges/${e.slug}`,
     lastModified: new Date(),
   }));

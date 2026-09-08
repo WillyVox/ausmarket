@@ -49,3 +49,36 @@ before launch.
    once accounts/watchlists collect personal information — a Privacy
    Policy that matches actual data practices (not a template) will be
    needed before Phase 5.
+
+7. **Placeholder comparison data.** The broker and exchange records in
+   `src/lib/brokers/static-data.ts` (seeded into the `Broker`/
+   `Exchange` tables by `prisma/seed.ts`) — including fee summaries,
+   features, pros/considerations, and regulatory descriptions — are
+   illustrative placeholders written to establish the page structure,
+   not verified current facts. Every `lastVerifiedAt` is deliberately
+   `null` (renders as "Not verified") for this reason, in both the
+   database and the fallback copy. Before any `/brokers/[slug]`,
+   `/exchanges/[slug]`, or `/compare/*` page goes live, each factual
+   claim needs to be checked against the provider's current published
+   terms, dated, and sourced — not just carried over from this
+   scaffold. Moving this content into Prisma (Phase 4) did not change
+   its verification status; don't treat "now in the database" as
+   "now verified."
+
+8. **AffiliatePartner model is unused.** `AffiliatePartner` was
+   scaffolded in Phase 1 before `Broker`/`Exchange` existed. It's left
+   in the schema in case a future phase wants one consolidated partner
+   table across categories, but nothing currently reads or writes it
+   — real partner content and the `/go/[partner]` redirect both use
+   `Broker`/`Exchange` via `src/lib/brokers/repository.ts`. If a future
+   phase decides to actually use `AffiliatePartner`, reconcile it with
+   `Broker`/`Exchange` rather than running three partner tables at
+   once.
+
+9. **`/methodology`'s "Transparency Snapshot" is descriptive, not a
+   score.** The live counts on that page (platforms tracked, verified
+   entries, active affiliate links, clicks) are accurate at the moment
+   they're rendered, but they are not a scoring algorithm — the page
+   still says so explicitly ("LEGAL REVIEW REQUIRED... the actual
+   scoring process needs to be built"). Don't let the presence of real
+   numbers be read as "the methodology is now implemented."

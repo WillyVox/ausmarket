@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { BROKERS, getBrokerBySlug, verifiedLabel } from "@/lib/brokers/data";
+import { getBrokers, getBrokerBySlug, verifiedLabel } from "@/lib/brokers/repository";
 
-export function generateStaticParams() {
-  return BROKERS.map((b) => ({ slug: b.slug }));
+export async function generateStaticParams() {
+  const brokers = await getBrokers();
+  return brokers.map((b) => ({ slug: b.slug }));
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { slug } = await params;
-  const broker = getBrokerBySlug(slug);
+  const broker = await getBrokerBySlug(params.slug);
   if (!broker) return { title: "Broker not found" };
   return {
     title: `${broker.name} Review & Fees`,
@@ -17,11 +17,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BrokerPage({ params }: { params: { slug: string } }) {
-  const { slug } = await params;
-  const broker = getBrokerBySlug(slug);
+  const broker = await getBrokerBySlug(params.slug);
   if (!broker) notFound();
 
-  const alternatives = BROKERS.filter((b) => b.slug !== broker.slug).slice(0, 3);
+  const allBrokers = await getBrokers();
+  const alternatives = allBrokers.filter((b) => b.slug !== broker.slug).slice(0, 3);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">

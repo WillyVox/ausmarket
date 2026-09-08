@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EXCHANGES } from "@/lib/brokers/data";
+import { getExchanges } from "@/lib/brokers/repository";
 import { ComparisonTable } from "@/components/comparison-table";
 
 export const metadata: Metadata = {
@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     "Compare cryptocurrency exchanges available to Australian users by fees, coins supported and regulatory status.",
 };
 
-export default function CryptoExchangesPage() {
+export default async function CryptoExchangesPage() {
+  const exchanges = await getExchanges();
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-navy-900">
@@ -24,7 +25,7 @@ export default function CryptoExchangesPage() {
 
       <ComparisonTable
         marketsColumnLabel="Products"
-        rows={EXCHANGES.map((e) => ({
+        rows={exchanges.map((e) => ({
           slug: e.slug,
           name: e.name,
           feesSummary: e.feesSummary,
