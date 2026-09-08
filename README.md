@@ -37,38 +37,60 @@ launch.
   before relying on it beyond local testing. Indices (ASX 200, All
   Ordinaries) are still mock regardless.
 
-## What's in this slice
+## What's in this slice (Phase 3 — SEO Engine + Comparison Data Layer)
 
-- Project scaffold (`package.json`, `tsconfig.json`, Tailwind config)
-- Full Prisma schema for every model in the spec (stocks, forex,
-  crypto, news, brokers, affiliate partners/clicks, ads, articles,
-  users/watchlists, audit log)
-- Homepage with a market snapshot section wired to the provider
-  abstraction (crypto card is now live data)
-- One programmatic stock page template (`/stocks/[symbol]`)
-- Compare landing page skeleton (`/compare/brokers`)
-- Affiliate redirect route (`/go/[partner]`) with a domain allowlist,
-  click logging stub, and open-redirect protection
-- Trust/compliance pages: `/disclaimer`, `/affiliate-disclosure`,
-  `/how-we-make-money`
-- Affiliate + market-data config abstractions (no hardcoded links in
-  components — everything reads from `AffiliatePartner` records)
+Building on Phase 1 (foundation) and Phase 2 (live crypto/forex/stock
+data), this pass:
+
+- Fixed two route gaps found during Phase 2 testing:
+  - `/stocks` was 404ing (no index page) — added a search + popular-
+    stocks index at `src/app/stocks/page.tsx`, backed by
+    `src/lib/stocks/data.ts`, and a matching search box on the homepage.
+  - `/compare`, `/compare/share-trading-platforms`,
+    `/compare/forex-platforms` and `/compare/crypto-exchanges` were
+    linked from CTAs across the site but didn't exist — all four now
+    exist, alongside a refactored `/compare/brokers`.
+- Added a shared comparison data layer, `src/lib/brokers/data.ts`
+  (`BROKERS`, `EXCHANGES`) — every `/compare/*`, `/brokers/[slug]`,
+  `/exchanges/[slug]` page and the `/go/[partner]` redirect now read
+  from this one module instead of duplicated hardcoded rows.
+  **All figures in it are placeholders pending legal/editorial
+  review** — see `docs/compliance-flags.md` item 7.
+- Added `/brokers/[slug]` and `/exchanges/[slug]` detail pages:
+  overview, fees, platform features, pros/considerations, regulatory
+  info, sources, and alternatives — not thin affiliate landers.
+- Found the same "linked but not built" pattern in two more places
+  and fixed both: `/learn/[slug]` was missing 3 of the 5 articles the
+  `/learn` index links to (all 5 now have real, neutral,
+  Australia-specific content), and `/tools` linked to 5 calculators
+  that didn't exist (added real compound-interest and
+  inflation calculators; the rest now show an honest "coming soon"
+  page instead of a dead link).
+- SEO technical layer: `sitemap.ts`, `robots.ts`, `metadataBase` +
+  OpenGraph/Twitter defaults on the root layout, Organization +
+  WebSite JSON-LD site-wide, Article JSON-LD on learn pages.
+- Cross-linking between learn articles, tools, and comparison pages.
 
 ## What's deliberately NOT in this slice
 
-Everything in Phases 2–7 of the roadmap: real data provider
-integration, charts, economic calendar, search, education content,
-the full comparison engine and scoring methodology, auth/watchlists,
-admin CMS, analytics wiring, ad placements. Building all of that in
-one pass would produce shallow, unreviewed code across a dozen
-subsystems — better to harden each phase before moving to the next,
-per the spec's own "development workflow" section.
+Real historical charts, top gainers/losers/movers data, news
+ingestion, the full programmatic stock/forex/crypto template set
+beyond the current popular-stocks list, FAQ schema on tool pages, and
+everything in Phase 4 onward: moving broker/exchange data into
+Prisma, real affiliate click storage, the public `/methodology`
+scoring writeup, auth/watchlists, admin CMS, analytics wiring, ad
+placements. See `docs/roadmap.md`.
 
 ## Running it
 
 This scaffold isn't `npm install`-able as-is in this environment (no
 network access here to pull dependencies) — it's meant to be dropped
 into a repo, then `npm install && npx prisma migrate dev && npm run dev`.
+Because of that, this session's changes were reviewed manually
+(brace/paren balance across every new file, every internal `href`
+traced against an actual route) rather than machine-verified — run
+`npm run typecheck && npm run lint` yourself before trusting it fully.
+
 
 # Step by step to run the app locally
 

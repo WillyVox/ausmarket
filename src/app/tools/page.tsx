@@ -16,8 +16,8 @@ export default function ToolsPage() {
     <div className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-navy-900">Free Tools</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Only the currency converter is wired up so far — the rest are
-        placeholders for Phase 3.
+        Currency converter, compound interest and inflation calculators
+        are live — the rest are placeholders for a later phase.
       </p>
       <ul className="mt-6 grid gap-3 md:grid-cols-2">
         {TOOLS.map((t) => (

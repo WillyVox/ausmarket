@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAllowlistedAffiliateUrl } from "@/lib/affiliate/config";
+import { BROKERS, EXCHANGES } from "@/lib/brokers/data";
 
 // Flow: /go/[partner-slug]?placement=stock_page&campaign=xyz
-// 1. Look up partner by slug (DB) — stubbed here.
-// 2. Validate the partner's affiliateUrl is on the domain allowlist.
+// 1. Look up partner by slug — currently the shared BROKERS/EXCHANGES
+//    data module; Phase 4 swaps this for a Prisma query against
+//    AffiliatePartner without changing the route's contract.
+// 2. Validate the partner's websiteUrl is on the domain allowlist.
 // 3. Record the click (fire-and-forget, never blocks the redirect).
 // 4. 302 redirect to the provider.
 //
@@ -17,16 +20,16 @@ interface PartnerRecord {
   isActive: boolean;
 }
 
-// Stub lookup — replace with a Prisma query against AffiliatePartner.
-async function lookupPartner(slug: string): Promise<PartnerRecord | null> {
-  const demo: Record<string, PartnerRecord> = {
-    "cmc-markets": {
-      slug: "cmc-markets",
-      affiliateUrl: "https://www.cmcmarkets.com/en-au/",
-      isActive: true,
-    },
-  };
-  return demo[slug] ?? null;
+function lookupPartner(slug: string): PartnerRecord | null {
+  const broker = BROKERS.find((b) => b.affiliateSlug === slug);
+  if (broker) {
+    return { slug: broker.slug, affiliateUrl: broker.websiteUrl, isActive: true };
+  }
+  const exchange = EXCHANGES.find((e) => e.affiliateSlug === slug);
+  if (exchange) {
+    return { slug: exchange.slug, affiliateUrl: exchange.websiteUrl, isActive: true };
+  }
+  return null;
 }
 
 async function recordClick(params: {
@@ -44,7 +47,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { partner: string } }
 ) {
-  const partner = await lookupPartner(params.partner);
+  const { partner: partnerVal } = await params;
+
+  const partner = lookupPartner(partnerVal);
 
   if (!partner || !partner.isActive) {
     return NextResponse.redirect(new URL("/compare/brokers", req.url));
@@ -52,7 +57,7 @@ export async function GET(
 
   if (!isAllowlistedAffiliateUrl(partner.affiliateUrl)) {
     // Fail closed: never redirect to an unapproved destination, even
-    // if it's sitting in the database.
+    // if it's sitting in the data source.
     console.error(
       `[affiliate_redirect_blocked] ${partner.slug} -> ${partner.affiliateUrl} not on allowlist`
     );

@@ -28,8 +28,9 @@ export default async function StocksIndexPage({
   // Simple ticker search — typing a symbol and submitting jumps
   // straight to its page. Real autocomplete (matching company names,
   // not just exact tickers) is a Phase 3 search-engine feature.
-  if (searchParams?.q) {
-    redirect(`/stocks/${searchParams.q.trim().toLowerCase()}`);
+  const { q: query } = await searchParams;
+  if (query) {
+    redirect(`/stocks/${query.trim().toLowerCase()}`);
   }
 
   const provider = getMarketDataProvider();
