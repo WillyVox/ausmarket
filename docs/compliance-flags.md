@@ -19,6 +19,15 @@ before launch.
    `ASX_DATA_PROVIDER` / `ASX_DATA_API_KEY` config — actually going
    live requires a commercial data agreement.
 
+   **Interim state (added this session):** `/stocks/[symbol]` can
+   optionally pull live-ish quotes from Twelve Data's free tier
+   (`TWELVE_DATA_API_KEY` in `.env`) for local development and low
+   traffic. This is explicitly a stopgap, not the licensed feed the
+   spec calls for — Twelve Data's own redistribution terms need to be
+   checked against actual traffic before this is relied on beyond
+   development/testing. Leaving the key unset falls back to mock data
+   automatically, so nothing breaks either way.
+
 3. **Affiliate disclosure adequacy.** ASIC and ACCC both have views on
    what counts as adequate disclosure of commercial relationships,
    especially where ranking or "best of" language is used. Disclosure

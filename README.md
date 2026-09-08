@@ -29,12 +29,13 @@ launch.
   `DELAYED`, not `LIVE`, and labelled that way. Only the mid rate is
   real; bid/ask/high/low are shown as "Not verified" rather than
   invented, since Frankfurter doesn't expose a dealing spread.
-- **ASX stocks/indices: still mock**, clearly labelled
-  `status: "UNAVAILABLE"`. Wiring up a real feed for these is a
-  one-file change in `CompositeMarketDataProvider` — add a method
-  override the same way `getCryptoPrice`/`getForexRate` do, no page
-  changes needed. ASX data specifically needs a commercial licence
-  (see docs/compliance-flags.md) before going further.
+- **ASX stocks (`/stocks/[symbol]`): LIVE if configured, mock
+  otherwise.** Set `TWELVE_DATA_API_KEY` in `.env` (free tier at
+  twelvedata.com) to enable — see `src/lib/market-data/twelvedata-provider.ts`.
+  **This is a development stopgap, not the licensed ASX feed the
+  original spec calls for** — see docs/compliance-flags.md item 2
+  before relying on it beyond local testing. Indices (ASX 200, All
+  Ordinaries) are still mock regardless.
 
 ## What's in this slice
 

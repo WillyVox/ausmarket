@@ -8,8 +8,9 @@ import type {
   NewsItem,
 } from "./provider";
 import { MockMarketDataProvider } from "./mock-provider";
-import { fetchCoinGeckoQuote, isCoinGeckoSupported } from "./coingecko-provider";
-import { fetchFrankfurterRate, isFrankfurterSupported } from "./frankfurter-provider";
+import { fetchCoinGeckoQuote, isCoinGeckoSupported } from "./coingecko-provider"; // for live scrypto
+import { fetchFrankfurterRate, isFrankfurterSupported } from "./frankfurter-provider"; // for live forex
+import { fetchTwelveDataQuote, isTwelveDataConfigured } from "./twelvedata-provider"; // for live stock (ASC)
 
 // Delegates each method to whichever backing provider actually has a
 // real implementation for it. This is the seam every future
@@ -20,6 +21,12 @@ export class CompositeMarketDataProvider implements MarketDataProvider {
   constructor(private readonly fallback: MarketDataProvider) {}
 
   async getQuote(symbol: string): Promise<Quote | null> {
+    if (isTwelveDataConfigured()) {
+      const live = await fetchTwelveDataQuote(symbol);
+      if (live) return live;
+      // Key configured but request failed/rate-limited — fall back
+      // rather than showing nothing.
+    }
     return this.fallback.getQuote(symbol);
   }
 

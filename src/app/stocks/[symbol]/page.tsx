@@ -6,26 +6,28 @@ export async function generateMetadata({
 }: {
   params: { symbol: string };
 }): Promise<Metadata> {
-  const symbol = params.symbol.toUpperCase();
+  const { symbol } = await params;
+  const symbolUpper = symbol.toUpperCase();
   return {
-    title: `${symbol} Share Price Today | ASX`,
-    description: `Live-tracked ${symbol} share price, chart, statistics and news on the ASX.`,
+    title: `${symbolUpper} Share Price Today | ASX`,
+    description: `Live-tracked ${symbolUpper} share price, chart, statistics and news on the ASX.`,
   };
 }
 
 export default async function StockPage({ params }: { params: { symbol: string } }) {
-  const symbol = params.symbol.toUpperCase();
+  const { symbol } = await params;
+  const symbolUpper = symbol.toUpperCase();
   const provider = getMarketDataProvider();
   const [quote, fundamentals] = await Promise.all([
-    provider.getQuote(symbol),
-    provider.getFundamentals(symbol),
+    provider.getQuote(symbolUpper),
+    provider.getFundamentals(symbolUpper),
   ]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <header className="flex items-baseline justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-navy-900">{symbol}</h1>
+          <h1 className="text-2xl font-semibold text-navy-900">{symbolUpper}</h1>
           <p className="text-sm text-slate-500">ASX · Australian Securities Exchange</p>
         </div>
         <div className="text-right">
