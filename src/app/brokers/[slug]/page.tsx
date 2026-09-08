@@ -8,7 +8,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const broker = await getBrokerBySlug(params.slug);
+  const { slug } = await params;
+  const broker = await getBrokerBySlug(slug);
   if (!broker) return { title: "Broker not found" };
   return {
     title: `${broker.name} Review & Fees`,
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BrokerPage({ params }: { params: { slug: string } }) {
-  const broker = await getBrokerBySlug(params.slug);
+  const { slug } = await params;
+  const broker = await getBrokerBySlug(slug);
   if (!broker) notFound();
 
   const allBrokers = await getBrokers();
