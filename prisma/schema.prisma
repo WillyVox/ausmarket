@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DataStatus {
+  LIVE
+  DELAYED
+  STALE
+  UNAVAILABLE
+}
+
+enum ContentLabel {
+  FACT
+  DATA
+  EDUCATION
+  COMMENTARY
+  OPINION
+  SPONSORED
+  AFFILIATE
+}
+
+enum CommissionType {
+  CPA
+  REVENUE_SHARE
+  HYBRID
+  UNKNOWN
+}
+
+model User {
+  id            String        @id @default(cuid())
+  email         String        @unique
+  name          String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  watchlists    Watchlist[]
+  alerts        UserAlert[]
+}
+
+model Watchlist {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  name      String
+  items     WatchlistItem[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model WatchlistItem {
+  id          String    @id @default(cuid())
+  watchlistId String
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id])
+  symbolType  String // "stock" | "forex" | "crypto"
+  symbol      String
+  addedAt     DateTime  @default(now())
+}
+
+model UserAlert {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  symbol    String
+  condition String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ---------- Markets ----------
+
+model Stock {
+  id          String        @id @default(cuid())
+  symbol      String        @unique
+  name        String
+  exchange    String        @default("ASX")
+  sector      String?
+  industry    String?
+  description String?
+  prices      StockPrice[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model StockPrice {
+  id        String     @id @default(cuid())
+  stockId   String
+  stock     Stock      @relation(fields: [stockId], references: [id])
+  price     Decimal
+  change    Decimal
+  changePct Decimal
+  volume    BigInt?
+  marketCap Decimal?
+  timestamp DateTime
+  source    String
+  status    DataStatus @default(DELAYED)
+}
+
+model ForexPair {
+  id        String        @id @default(cuid())
+  base      String
+  quote     String
+  symbol    String        @unique // e.g. AUDUSD
+  prices    ForexPrice[]
+  createdAt DateTime      @default(now())
+}
+
+model ForexPrice {
+  id        String     @id @default(cuid())
+  pairId    String
+  pair      ForexPair  @relation(fields: [pairId], references: [id])
+  bid       Decimal
+  ask       Decimal
+  change    Decimal
+  high      Decimal
+  low       Decimal
+  timestamp DateTime
+  source    String
+  status    DataStatus @default(DELAYED)
+}
+
+model CryptoAsset {
+  id        String        @id @default(cuid())
+  symbol    String        @unique
+  name      String
+  prices    CryptoPrice[]
+  createdAt DateTime      @default(now())
+}
+
+model CryptoPrice {
+  id                String      @id @default(cuid())
+  assetId           String
+  asset             CryptoAsset @relation(fields: [assetId], references: [id])
+  priceUsd          Decimal
+  priceAud          Decimal
+  change24h         Decimal
+  volume24h         Decimal?
+  marketCap         Decimal?
+  circulatingSupply Decimal?
+  timestamp         DateTime
+  source            String
+  status            DataStatus  @default(DELAYED)
+}
+
+model Commodity {
+  id        String              @id @default(cuid())
+  symbol    String              @unique
+  name      String
+  prices    CommodityPrice[]
+}
+
+model CommodityPrice {
+  id          String     @id @default(cuid())
+  commodityId String
+  commodity   Commodity  @relation(fields: [commodityId], references: [id])
+  price       Decimal
+  change      Decimal
+  unit        String
+  timestamp   DateTime
+  source      String
+  status      DataStatus @default(DELAYED)
+}
+
+model MarketIndex {
+  id        String               @id @default(cuid())
+  symbol    String               @unique // e.g. XJO
+  name      String               // e.g. ASX 200
+  prices    MarketIndexPrice[]
+}
+
+model MarketIndexPrice {
+  id        String     @id @default(cuid())
+  indexId   String
+  index     MarketIndex @relation(fields: [indexId], references: [id])
+  value     Decimal
+  change    Decimal
+  changePct Decimal
+  timestamp DateTime
+  source    String
+  status    DataStatus @default(DELAYED)
+}
+
+// ---------- News & Calendar ----------
+
+model MarketNews {
+  id          String       @id @default(cuid())
+  headline    String
+  slug        String       @unique
+  summary     String
+  source      String
+  sourceUrl   String
+  publishedAt DateTime
+  updatedAt   DateTime     @updatedAt
+  category    String
+  symbols     String[]
+  tags        String[]
+  image       String?
+  author      String?
+  status      String       @default("published")
+  label       ContentLabel @default(FACT)
+}
+
+model EconomicEvent {
+  id         String   @id @default(cuid())
+  date       DateTime
+  country    String
+  currency   String
+  event      String
+  previous   String?
+  forecast   String?
+  actual     String?
+  importance String // low | medium | high
+}
+
+// ---------- Brokers / Exchanges / Affiliate ----------
+
+model Broker {
+  id                     String   @id @default(cuid())
+  name                   String
+  slug                   String   @unique
+  logo                   String?
+  description            String
+  country                String   @default("Australia")
+  products               String[]
+  markets                String[]
+  fees                   Json
+  brokerage              Json
+  spreads                Json?
+  minimumDeposit         Decimal?
+  platformFeatures       String[]
+  mobileApp              Boolean  @default(true)
+  researchTools          String[]
+  charting               String[]
+  demoAccount            Boolean  @default(false)
+  fundingMethods         String[]
+  customerSupport        String[]
+  regulatoryInformation  String
+  websiteUrl             String
+  affiliateUrl           String?
+  affiliateStatus        String   @default("none") // none | pending | active
+  affiliateDisclosure    String?
+  lastVerifiedAt         DateTime
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model AffiliatePartner {
+  id                    String         @id @default(cuid())
+  name                  String
+  slug                  String         @unique
+  category              String // broker | exchange | forex_platform
+  description           String
+  websiteUrl            String
+  affiliateUrl          String
+  logoUrl               String?
+  countryAvailability   String[]
+  products              String[]
+  trackingCode          String?
+  commissionType        CommissionType @default(UNKNOWN)
+  commissionDescription String?
+  regulatoryInformation String?
+  riskWarning           String?
+  isActive              Boolean        @default(true)
+  priority              Int            @default(0)
+  lastVerifiedAt        DateTime
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  clicks                AffiliateClick[]
+}
+
+model AffiliateClick {
+  id          String           @id @default(cuid())
+  partnerId   String
+  partner     AffiliatePartner @relation(fields: [partnerId], references: [id])
+  timestamp   DateTime         @default(now())
+  referrer    String?
+  landingPage String
+  placement   String
+  campaign    String?
+  deviceType  String?
+  country     String?
+  sessionId   String?
+}
+
+// ---------- Content ----------
+
+model Article {
+  id          String       @id @default(cuid())
+  title       String
+  slug        String       @unique
+  body        String
+  category    String
+  tags        String[]
+  label       ContentLabel @default(EDUCATION)
+  author      String?
+  publishedAt DateTime?
+  updatedAt   DateTime     @updatedAt
+  relatedSymbols String[]
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+}
+
+// ---------- Ads / Data providers / Settings ----------
+
+model AdPlacement {
+  id        String   @id @default(cuid())
+  placement String   @unique // homepage_top, article_middle, etc.
+  type      String
+  provider  String
+  status    String   @default("inactive")
+  priority  Int      @default(0)
+}
+
+model DataProvider {
+  id       String @id @default(cuid())
+  name     String @unique
+  kind     String // stocks | forex | crypto | news
+  isActive Boolean @default(false)
+}
+
+model DataSource {
+  id         String   @id @default(cuid())
+  name       String
+  url        String
+  lastPulled DateTime?
+}
+
+model SiteSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
