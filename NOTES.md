@@ -1,0 +1,3 @@
+Still deliberately stubbed (flagged in-page where relevant): historical charts, real news/economic-calendar data, the other 7 calculators, auth/watchlists, and the actual broker/comparison scoring engine — that's Phase 3–4 territory.
+
+One thing worth deciding before going further: do you want me to keep building breadth (more tool calculators, the full comparison engine with real broker data) or depth (wire up one real data source — e.g. CoinGecko for crypto, since it's free and keyless — end-to-end so at least one vertical isn't mock data)? I'd lean toward the latter since it de-risks the biggest unknown (data provider integration) early, but it's your call.

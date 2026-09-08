@@ -47,3 +47,13 @@ per the spec's own "development workflow" section.
 This scaffold isn't `npm install`-able as-is in this environment (no
 network access here to pull dependencies) — it's meant to be dropped
 into a repo, then `npm install && npx prisma migrate dev && npm run dev`.
+
+# Step by step to run the app locally
+
+1. Set up local DB (with Docker)
+
+2. npm i
+
+3. npx prisma migrate dev --name init
+
+4. npm run dev
