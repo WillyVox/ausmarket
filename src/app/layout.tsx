@@ -1,19 +1,67 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { auth, signOut } from "@/auth";
+import { NewsletterSignupForm } from "@/components/newsletter-signup-form";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ausmarket.example.com";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Australian Market Intelligence & Trading Platform Comparison",
     template: "%s | AusMarket",
   },
   description:
     "Free Australian market data, ASX news, and transparent trading platform comparisons.",
+  openGraph: {
+    type: "website",
+    siteName: "AusMarket",
+    locale: "en_AU",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  alternates: {
+    canonical: "/",
+  },
+};
+
+// Organization + WebSite JSON-LD, present site-wide. Page-level
+// schema (Article on /learn, FAQPage on tools) is added per-page —
+// this covers only the entity-level facts that don't change per page.
+const ORG_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "AusMarket",
+  url: SITE_URL,
+  description:
+    "Australian market intelligence and transparent trading platform comparisons.",
+};
+
+const WEBSITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "AusMarket",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${SITE_URL}/stocks?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-AU">
       <body className="bg-white text-charcoal antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ORG_JSON_LD) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSON_LD) }}
+        />
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
@@ -40,6 +88,7 @@ function SiteHeader() {
         </nav>
         <div className="flex items-center gap-3 text-sm">
           <a href="/watchlist" className="text-slate-600">Watchlist</a>
+          <AccountLink />
           <a
             href="/compare/brokers"
             className="rounded-md bg-navy-900 px-3 py-1.5 font-medium text-white"
@@ -52,10 +101,48 @@ function SiteHeader() {
   );
 }
 
+// Reads the session server-side, so no client-side SessionProvider is
+// needed just to know whether to show "Sign in" or "Sign out" — see
+// the note in src/components/auth/login-form.tsx for why signIn()/
+// signOut() themselves also don't need that provider.
+async function AccountLink() {
+  const session = await auth();
+
+  if (!session?.user) {
+    return (
+      <a href="/login" className="text-slate-600">
+        Sign in
+      </a>
+    );
+  }
+
+  return (
+    <form
+      action={async () => {
+        "use server";
+        await signOut({ redirectTo: "/" });
+      }}
+    >
+      <button type="submit" className="text-slate-600 hover:text-slate-900">
+        Sign out
+      </button>
+    </form>
+  );
+}
+
 function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-slate-200 bg-slate-50 py-10 text-sm text-slate-600">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 md:grid-cols-4">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="max-w-sm border-b border-slate-200 pb-8">
+          <p className="mb-2 font-semibold text-slate-900">Stay in the loop</p>
+          <p className="mb-3 text-xs text-slate-500">
+            Occasional Australian market updates. No spam.
+          </p>
+          <NewsletterSignupForm source="footer" />
+        </div>
+      </div>
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 pt-8 md:grid-cols-4">
         <div>
           <p className="mb-2 font-semibold text-slate-900">Company</p>
           <a href="/about" className="block">About</a>

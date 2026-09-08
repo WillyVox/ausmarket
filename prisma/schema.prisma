@@ -31,14 +31,26 @@ enum CommissionType {
   UNKNOWN
 }
 
+model SavedArticle {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleSlug String   // resolves via src/lib/learn/articles.ts, not a DB row
+  savedAt     DateTime @default(now())
+
+  @@unique([userId, articleSlug])
+}
+
 model User {
   id            String        @id @default(cuid())
   email         String        @unique
   name          String?
+  passwordHash  String?       // null if the account was ever created via a future OAuth flow
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   watchlists    Watchlist[]
   alerts        UserAlert[]
+  savedArticles SavedArticle[]
 }
 
 model Watchlist {
@@ -68,6 +80,14 @@ model UserAlert {
   condition String
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  subscribedAt DateTime @default(now())
+  source       String?  // "footer", "article_bottom", etc. — for attribution only
+  isActive     Boolean  @default(true)
 }
 
 // ---------- Markets ----------

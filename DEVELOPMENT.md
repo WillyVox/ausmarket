@@ -18,3 +18,10 @@ Natural next steps, in order of what unlocks the most:
 Phase 4 (Commercial Engine) — move BROKERS/EXCHANGES into Prisma, wire /go/[partner] to real AffiliateClick storage, write the actual /methodology scoring page
 Harden Phase 2/3 — real charts (TradingView Lightweight Charts), top gainers/losers data, news ingestion
 Get the real Twelve Data / ASX licensing question resolved (compliance-flags item 2) before any of this goes near production traffic
+
+
+
+
+marketcompare.com.au
+tradingresearch.com.au
+tradingmarket.com.au
