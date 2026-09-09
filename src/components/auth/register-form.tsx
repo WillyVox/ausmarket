@@ -85,7 +85,7 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-md bg-navy-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        className="w-full rounded-md bg-navy-900 px-4 py-2 text-sm font-medium disabled:opacity-60  border border-slate-300 text-slate-700"
       >
         {submitting ? "Creating account..." : "Create account"}
       </button>

@@ -259,3 +259,5 @@ flow round-trips to `/sponsored/[slug]`, and
 - Register an account at `/register`, then in another terminal:
    `npm run make:admin -- you@example.com`, then sign out/in on the
    site to pick up the new role and visit `/admin`.
+- View Database
+- `npx prisma studio`
