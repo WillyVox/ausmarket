@@ -3,6 +3,7 @@ import "./globals.css";
 import { auth, signOut } from "@/auth";
 import { NewsletterSignupForm } from "@/components/newsletter-signup-form";
 import { AdSlot } from "@/components/ads/ad-slot";
+import { MobileNav } from "@/components/mobile-nav";
 
 // Use || so empty strings "" fall back to the default URL
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ausmarket.example.com";
@@ -84,7 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <span className="text-lg font-semibold text-navy-900">AusMarket</span>
         <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex">
           <a href="/markets">Markets</a>
@@ -102,10 +103,11 @@ function SiteHeader() {
           <AccountLink />
           <a
             href="/compare/brokers"
-            className="rounded-md bg-navy-900 px-3 py-1.5 font-medium text-white"
+            className="hidden rounded-md bg-navy-900 px-3 py-1.5 font-medium text-white md:inline-block"
           >
             Compare Platforms
           </a>
+          <MobileNav />
         </div>
       </div>
     </header>
