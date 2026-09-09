@@ -165,7 +165,7 @@ function SiteFooter() {
           <p className="mb-2 font-semibold text-slate-900">Trust</p>
           <a href="/editorial-policy" className="block">Editorial Policy</a>
           <a href="/methodology" className="block">Methodology</a>
-          <a href="/how-we-make-money" className="block">How We Make Money</a>
+          <a href="/how-we-get-paid" className="block">How We Get Paid</a>
           <a href="/affiliate-disclosure" className="block">Affiliate Disclosure</a>
           <a href="/sponsored" className="block">Sponsored Content</a>
         </div>
@@ -184,7 +184,7 @@ function SiteFooter() {
         <a href="/affiliate-disclosure" className="underline">
           affiliate disclosure
         </a>{" "}
-        for how we make money.
+        for How We Get Paid.
       </p>
     </footer>
   );

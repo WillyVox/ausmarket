@@ -13,7 +13,7 @@ export default function AboutPage() {
       <p>
         We're independent of any single broker or exchange. Some
         comparison pages contain affiliate links — see our{" "}
-        <a href="/how-we-make-money" className="underline">how we make money</a>{" "}
+        <a href="/how-we-get-paid" className="underline">how we get paid</a>{" "}
         page for details.
       </p>
     </LegalPage>

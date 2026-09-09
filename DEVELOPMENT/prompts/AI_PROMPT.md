@@ -1,5 +1,5 @@
 
-# MASTER PROMPT
+# MASTER PROMPT TO BUILD THE PROJECT
 
 Australian Market Intelligence + Trading Platform Comparison
 
@@ -425,7 +425,7 @@ Create:
  /risk-warning
  /editorial-policy
  /methodology
- /how-we-make-money
+ /how-we-get-paid
 
 ============================================================
 HOMEPAGE
@@ -711,7 +711,7 @@ About
 Contact
 Editorial Policy
 Methodology
-How We Make Money
+How We Get Paid
 Affiliate Disclosure
 Risk Warning
 Privacy
@@ -1896,7 +1896,7 @@ Methodology
 Privacy Policy
 Terms
 Cookie Policy
-How We Make Money
+How We Get Paid
 
 IMPORTANT:
 
@@ -1935,7 +1935,7 @@ How commercial relationships are handled
 
 Create:
 
-/how-we-make-money
+/how-we-get-paid
 
 Explain:
 
@@ -2853,7 +2853,7 @@ Editorial policy
 Methodology
 Affiliate disclosure
 Risk warning
-How we make money
+How We Get Paid
 
 Nó giúp website không có cảm giác:
 

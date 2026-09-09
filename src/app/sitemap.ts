@@ -42,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/risk-warning",
     "/editorial-policy",
     "/methodology",
-    "/how-we-make-money",
+    "/how-we-get-paid",
     "/sponsored",
   ].map((path) => ({
     url: `${SITE_URL}${path}`,

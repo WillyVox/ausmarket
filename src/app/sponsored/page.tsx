@@ -16,7 +16,7 @@ export default async function SponsoredIndexPage() {
         Content on this page is paid for by the named sponsor and is separate from our
         independent editorial content. See our{" "}
         <a href="/editorial-policy" className="underline">editorial policy</a> and{" "}
-        <a href="/how-we-make-money" className="underline">how we make money</a>.
+        <a href="/how-we-get-paid" className="underline">how we get paid</a>.
       </p>
 
       {articles.length === 0 ? (
