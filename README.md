@@ -1,10 +1,5 @@
 # Australian Market Intelligence + Trading Platform Comparison
 
-Phase 6 (Monetization) slice, building on Phases 1–5. See
-`docs/roadmap.md` for the full phase plan and
-`docs/compliance-flags.md` for items that need legal sign-off before
-launch.
-
 ## Stack
 
 - Next.js (App Router) + TypeScript + Tailwind CSS
@@ -36,6 +31,74 @@ launch.
   original spec calls for** — see docs/compliance-flags.md item 2
   before relying on it beyond local testing. Indices (ASX 200, All
   Ordinaries) are still mock regardless.
+
+## Phases
+
+- Phase 1 - Foundation
+- Phase 2 - Live crypto/forex/stock data
+- Phase 3 — SEO Engine + Comparison Data Layer
+- Phase 4 — Commercial Engine
+- Phase 5 — Retention
+
+## Phase 1 (Foundation) scaffold. 
+
+This is the first slice of a much larger build — see docs/roadmap.md 
+for the full phase plan and docs/compliance-flags.md for items that 
+need legal sign-off before launch.
+
+What's in this slice
+
+Project scaffold (package.json, tsconfig.json, Tailwind config)
+Full Prisma schema for every model in the spec (stocks, forex, 
+crypto, news, brokers, affiliate partners/clicks, ads, articles, 
+users/watchlists, audit log)
+Homepage with a market snapshot section wired to the provider 
+abstraction (crypto card is now live data)
+One programmatic stock page template (/stocks/[symbol])
+Compare landing page skeleton (/compare/brokers)
+Affiliate redirect route (/go/[partner]) with a domain allowlist, 
+click logging stub, and open-redirect protection
+Trust/compliance pages: /disclaimer, /affiliate-disclosure, /how-we-get-paid
+Affiliate + market-data config abstractions (no hardcoded 
+links in components — everything reads from AffiliatePartner records)
+
+## Phase 2 — Market Intelligence ✅ (stocks flagged as stopgap)
+
+Real crypto (CoinGecko), forex (Frankfurter/ECB) and stock (Twelve
+Data, free-tier stopgap) quotes wired through the
+`MarketDataProvider` abstraction, each honestly labelled LIVE /
+DELAYED / UNAVAILABLE — never fabricated. Charts, full historical
+data and news ingestion are still open (see "Not yet built" below).
+
+
+## Phase 3 — SEO Engine ✅ (this slice)
+
+Metadata + OpenGraph + JSON-LD templates, sitemap.xml/robots.txt, 
+internal linking system, programmatic page templates for stocks/
+forex/crypto with real content guardrails (no thin pages), 
+first batch of tools (compound interest, currency converter, etc).
+
+# Phase 4 — Commercial Engine (next)
+
+Broker + exchange database population, comparison engine (2–4 way compare), 
+scoring methodology page, affiliate partner records, /go/[partner] 
+redirect + click tracking, contextual CTAs.
+
+Move BROKERS/EXCHANGES from the static data module into Prisma-backed 
+Broker/AffiliatePartner tables, populate real (legally reviewed) 
+fee/feature data with genuine lastVerifiedAt dates, wire /go/[partner] 
+and recordClick to the real AffiliateClick table, build the public /methodology 
+scoring system referenced from every comparison page, and expand 
+the broker list beyond the current six/four.
+
+# Phase 5 — Retention
+
+Auth.js integration, watchlists, alerts, newsletter signup, saved articles.
+
+## Phase 6 (Monetization) slice, building on Phases 1–5. See
+`docs/roadmap.md` for the full phase plan and
+`docs/compliance-flags.md` for items that need legal sign-off before
+launch.
 
 ## What's in this slice (Phase 6 — Monetization)
 
@@ -188,17 +251,11 @@ flow round-trips to `/sponsored/[slug]`, and
 `npm run db:seed` completes against a real Postgres instance.
 
 # Step by step to run the app locally
-
-1. Set up local DB (with Docker)
-
-2. `npm i`
-
-3. `npx prisma migrate dev`
-
-4. `npm run db:seed`
-
-5. `npm run dev`
-
-6. Register an account at `/register`, then in another terminal:
+- Set up local DB (with Docker)
+- `npm i`
+- `npx prisma migrate dev`
+- `npm run db:seed`
+- `npm run dev`
+- Register an account at `/register`, then in another terminal:
    `npm run make:admin -- you@example.com`, then sign out/in on the
    site to pick up the new role and visit `/admin`.
