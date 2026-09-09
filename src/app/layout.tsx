@@ -4,7 +4,11 @@ import { auth, signOut } from "@/auth";
 import { NewsletterSignupForm } from "@/components/newsletter-signup-form";
 import { AdSlot } from "@/components/ads/ad-slot";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ausmarket.example.com";
+// Use || so empty strings "" fall back to the default URL
+const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ausmarket.example.com";
+
+// Ensure protocol is present to satisfy URL constructor
+const SITE_URL = rawSiteUrl.startsWith("http") ? rawSiteUrl : `https://${rawSiteUrl}`;;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
