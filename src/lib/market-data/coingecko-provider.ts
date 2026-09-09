@@ -58,6 +58,7 @@ export async function fetchCoinGeckoQuote(symbol: string): Promise<CryptoQuote |
     }
 
     return {
+      value: entry.usd,
       priceUsd: entry.usd,
       priceAud: entry.aud,
       change24h: entry.usd_24h_change ?? 0,

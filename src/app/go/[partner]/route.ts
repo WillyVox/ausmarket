@@ -18,9 +18,10 @@ import { resolveAffiliateTarget, recordAffiliateClick } from "@/lib/brokers/repo
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { partner: string } }
+  { params }: { params: Promise<{ partner: string }> }
 ) {
-  const target = await resolveAffiliateTarget(params.partner);
+  const { partner } = await params;
+  const target = await resolveAffiliateTarget(partner);
 
   if (!target) {
     return NextResponse.redirect(new URL("/compare/brokers", req.url));

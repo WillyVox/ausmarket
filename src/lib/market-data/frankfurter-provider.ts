@@ -64,6 +64,7 @@ export async function fetchFrankfurterRate(pair: string): Promise<ForexRate | nu
     }
 
     return {
+      value: latest,
       mid: latest,
       change: change ?? 0,
       changePct,

@@ -51,6 +51,7 @@ export class MockMarketDataProvider implements MarketDataProvider {
 
   async getForexRate(pair: string): Promise<ForexRate | null> {
     return {
+      value: 0.6521,
       mid: 0.6521,
       bid: 0.652,
       ask: 0.6522,
@@ -67,6 +68,7 @@ export class MockMarketDataProvider implements MarketDataProvider {
 
   async getCryptoPrice(symbol: string): Promise<CryptoQuote | null> {
     return {
+      value: 65000,
       priceUsd: 65000,
       priceAud: 99500,
       change24h: 1.2,
