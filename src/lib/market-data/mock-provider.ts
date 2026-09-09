@@ -6,6 +6,7 @@ import type {
   CryptoQuote,
   Fundamentals,
   NewsItem,
+  PricePoint,
 } from "./provider";
 
 // IMPORTANT: this provider exists only to make the UI renderable
@@ -31,7 +32,7 @@ export class MockMarketDataProvider implements MarketDataProvider {
     };
   }
 
-  async getHistoricalPrices(): Promise<{ t: string; v: number }[]> {
+  async getHistoricalPrices(): Promise<PricePoint[]> {
     return [];
   }
 

@@ -1,4 +1,4 @@
-import type { Quote } from "./provider";
+import type { Quote, PricePoint } from "./provider";
 
 // Real, live-ish implementation for ASX stock quotes via Twelve Data
 // (https://twelvedata.com). Unlike CoinGecko/Frankfurter, this one
@@ -49,6 +49,79 @@ function buildQuoteUrl(symbol: string): string {
 
 export function isTwelveDataConfigured(): boolean {
   return getApiKey() !== null;
+}
+
+// Free tier is 800 req/day, 8/min — so we ask for daily candles for
+// every range except the two shortest, where an intraday interval is
+// actually meaningful. outputsize is capped well under the free
+// tier's per-symbol ceiling.
+function rangeToParams(range: string): { interval: string; outputsize: number } {
+  switch (range) {
+    case "1D":
+      return { interval: "5min", outputsize: 80 }; // ~ one ASX trading day
+    case "5D":
+      return { interval: "30min", outputsize: 65 };
+    case "1M":
+      return { interval: "1day", outputsize: 22 }; // trading days in a month
+    case "3M":
+      return { interval: "1day", outputsize: 65 };
+    case "6M":
+      return { interval: "1day", outputsize: 130 };
+    case "YTD": {
+      const now = new Date();
+      const jan1 = Date.UTC(now.getUTCFullYear(), 0, 1);
+      const calendarDays = Math.max(1, Math.ceil((now.getTime() - jan1) / 86_400_000));
+      return { interval: "1day", outputsize: Math.min(260, Math.ceil(calendarDays * 0.7)) };
+    }
+    case "1Y":
+      return { interval: "1day", outputsize: 260 };
+    case "5Y":
+      return { interval: "1week", outputsize: 260 };
+    case "MAX":
+      return { interval: "1month", outputsize: 240 };
+    default:
+      return { interval: "1day", outputsize: 22 };
+  }
+}
+
+interface TwelveDataTimeSeriesResponse {
+  values?: { datetime: string; close: string }[];
+  status?: string;
+  message?: string;
+}
+
+export async function fetchTwelveDataHistory(symbol: string, range: string): Promise<PricePoint[]> {
+  if (!isTwelveDataConfigured()) return [];
+
+  const { interval, outputsize } = rangeToParams(range);
+  const url = new URL("https://api.twelvedata.com/time_series");
+  url.searchParams.set("symbol", symbol.toUpperCase());
+  url.searchParams.set("exchange", "ASX");
+  url.searchParams.set("interval", interval);
+  url.searchParams.set("outputsize", String(outputsize));
+  url.searchParams.set("apikey", getApiKey() as string);
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 300 } });
+    if (!res.ok) {
+      console.error(`[twelvedata] history ${res.status} for ${symbol}`);
+      return [];
+    }
+
+    const data = (await res.json()) as TwelveDataTimeSeriesResponse;
+    if (data.status === "error" || !data.values) {
+      console.error(`[twelvedata] history error for ${symbol}: ${data.message ?? "unknown"}`);
+      return [];
+    }
+
+    return data.values
+      .map((v) => ({ t: new Date(v.datetime).toISOString(), v: parseFloat(v.close) }))
+      .filter((p) => !Number.isNaN(p.v))
+      .sort((a, b) => a.t.localeCompare(b.t));
+  } catch (err) {
+    console.error(`[twelvedata] history fetch failed for ${symbol}`, err);
+    return [];
+  }
 }
 
 export async function fetchTwelveDataQuote(symbol: string): Promise<Quote | null> {

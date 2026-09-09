@@ -1,10 +1,11 @@
 import { getMarketDataProvider } from "@/lib/market-data";
 import type { Metadata } from "next";
+import { PriceChart } from "@/components/charts/price-chart";
 
 export async function generateMetadata({
   params,
 }: {
-  params: { pair: string };
+  params: Promise<{ pair: string }>;
 }): Promise<Metadata> {
   const { pair } = (await params);
   const pairUpper = pair.toUpperCase();
@@ -14,11 +15,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function ForexPairPage({ params }: { params: { pair: string } }) {
+export default async function ForexPairPage({ params }: { params: Promise<{ pair: string }> }) {
   const { pair } = (await params);
   const pairUpper = pair.toUpperCase();
   const provider = getMarketDataProvider();
-  const rate = await provider.getForexRate(pairUpper);
+  const [rate, history] = await Promise.all([
+    provider.getForexRate(pairUpper),
+    provider.getHistoricalPrices(pairUpper, "3M", "FOREX"),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -51,8 +55,14 @@ export default async function ForexPairPage({ params }: { params: { pair: string
         <Stat label="Low" value={rate?.low} />
       </div>
 
-      <div className="mt-6 h-64 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-sm text-slate-400">
-        Historical chart — Phase 2/3
+      <div className="mt-6">
+        <PriceChart
+          symbol={pairUpper}
+          market="FOREX"
+          initialRange="3M"
+          initialPoints={history}
+          decimals={4}
+        />
       </div>
 
       <section className="mt-10 rounded-lg border border-slate-200 p-5">

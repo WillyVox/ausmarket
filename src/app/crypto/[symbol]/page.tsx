@@ -1,10 +1,11 @@
 import { getMarketDataProvider } from "@/lib/market-data";
 import type { Metadata } from "next";
+import { PriceChart } from "@/components/charts/price-chart";
 
 export async function generateMetadata({
   params,
 }: {
-  params: { symbol: string };
+  params: Promise<{ symbol: string }>;
 }): Promise<Metadata> {
   const { symbol } = await params;
   const upperSymbol = symbol.toUpperCase();
@@ -14,11 +15,14 @@ export async function generateMetadata({
   };
 }
 
-export default async function CryptoAssetPage({ params }: { params: { symbol: string } }) {
+export default async function CryptoAssetPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
   const upperSymbol = symbol.toUpperCase();
   const provider = getMarketDataProvider();
-  const quote = await provider.getCryptoPrice(upperSymbol);
+  const [quote, history] = await Promise.all([
+    provider.getCryptoPrice(upperSymbol),
+    provider.getHistoricalPrices(upperSymbol, "3M", "CRYPTO"),
+  ]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -34,8 +38,15 @@ export default async function CryptoAssetPage({ params }: { params: { symbol: st
         <Stat label="Volume (24h)" value={quote?.volume24h} prefix="$" />
       </div>
 
-      <div className="mt-6 h-64 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-sm text-slate-400">
-        Historical chart — Phase 2 (TradingView Lightweight Charts)
+      <div className="mt-6">
+        <PriceChart
+          symbol={upperSymbol}
+          market="CRYPTO"
+          initialRange="3M"
+          initialPoints={history}
+          decimals={2}
+          valuePrefix="$"
+        />
       </div>
 
       <p className="mt-6 rounded-md bg-amber-50 p-3 text-xs text-amber-800">

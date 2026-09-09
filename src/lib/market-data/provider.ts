@@ -66,9 +66,20 @@ export interface Fundamentals {
   avgVolume?: number;
 }
 
+export type HistoricalRange = "1D" | "5D" | "1M" | "3M" | "6M" | "YTD" | "1Y" | "5Y" | "MAX";
+
+export interface PricePoint {
+  t: string; // ISO timestamp
+  v: number;
+}
+
 export interface MarketDataProvider {
   getQuote(symbol: string): Promise<Quote | null>;
-  getHistoricalPrices(symbol: string, range: string): Promise<{ t: string; v: number }[]>;
+  getHistoricalPrices(
+    symbol: string,
+    range: string,
+    market?: "STOCK" | "FOREX" | "CRYPTO"
+  ): Promise<PricePoint[]>;
   getIndex(symbol: string): Promise<IndexQuote | null>;
   getForexRate(pair: string): Promise<ForexRate | null>;
   getCryptoPrice(symbol: string): Promise<CryptoQuote | null>;

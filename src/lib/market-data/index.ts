@@ -6,11 +6,13 @@ import type {
   CryptoQuote,
   Fundamentals,
   NewsItem,
+  PricePoint,
 } from "./provider";
 import { MockMarketDataProvider } from "./mock-provider";
-import { fetchCoinGeckoQuote, isCoinGeckoSupported } from "./coingecko-provider"; // for live scrypto
-import { fetchFrankfurterRate, isFrankfurterSupported } from "./frankfurter-provider"; // for live forex
-import { fetchTwelveDataQuote, isTwelveDataConfigured } from "./twelvedata-provider"; // for live stock (ASC)
+import { fetchCoinGeckoQuote, fetchCoinGeckoHistory, isCoinGeckoSupported } from "./coingecko-provider"; // for live scrypto
+import { fetchFrankfurterRate, fetchFrankfurterHistory, isFrankfurterSupported } from "./frankfurter-provider"; // for live forex
+import { fetchTwelveDataQuote, fetchTwelveDataHistory, isTwelveDataConfigured } from "./twelvedata-provider"; // for live stock (ASC)
+import { fetchGoogleNewsRss } from "./news-provider";
 
 // Delegates each method to whichever backing provider actually has a
 // real implementation for it. This is the seam every future
@@ -30,8 +32,24 @@ export class CompositeMarketDataProvider implements MarketDataProvider {
     return this.fallback.getQuote(symbol);
   }
 
-  async getHistoricalPrices(symbol: string, range: string) {
-    return this.fallback.getHistoricalPrices(symbol, range);
+  async getHistoricalPrices(
+    symbol: string,
+    range: string,
+    market?: "STOCK" | "FOREX" | "CRYPTO"
+  ): Promise<PricePoint[]> {
+    if (market === "CRYPTO" && isCoinGeckoSupported(symbol)) {
+      const live = await fetchCoinGeckoHistory(symbol, range);
+      if (live.length > 0) return live;
+    }
+    if (market === "FOREX" && isFrankfurterSupported(symbol)) {
+      const live = await fetchFrankfurterHistory(symbol, range);
+      if (live.length > 0) return live;
+    }
+    if (market === "STOCK" && isTwelveDataConfigured()) {
+      const live = await fetchTwelveDataHistory(symbol, range);
+      if (live.length > 0) return live;
+    }
+    return this.fallback.getHistoricalPrices(symbol, range, market);
   }
 
   async getIndex(symbol: string): Promise<IndexQuote | null> {
@@ -62,6 +80,8 @@ export class CompositeMarketDataProvider implements MarketDataProvider {
   }
 
   async getNews(params?: { symbol?: string; category?: string; limit?: number }): Promise<NewsItem[]> {
+    const live = await fetchGoogleNewsRss(params);
+    if (live.length > 0) return live;
     return this.fallback.getNews(params);
   }
 }

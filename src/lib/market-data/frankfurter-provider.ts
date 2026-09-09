@@ -1,4 +1,4 @@
-import type { ForexRate } from "./provider";
+import type { ForexRate, PricePoint } from "./provider";
 
 // Real, live implementation for forex mid rates via Frankfurter
 // (https://frankfurter.dev) — free, keyless, backed by ECB reference
@@ -91,4 +91,58 @@ export function isFrankfurterSupported(pair: string): boolean {
     FRANKFURTER_SUPPORTED_CURRENCIES.has(split.base) &&
     FRANKFURTER_SUPPORTED_CURRENCIES.has(split.quote)
   );
+}
+
+// ECB reference rates only go back to 1999 and are only ever published
+// once per business day, so "1D"/"5D" collapse to a short window rather
+// than a genuine intraday series — Frankfurter simply doesn't have
+// intraday data, and we'd rather show a short-but-real series than
+// interpolate a fake one.
+function rangeToStartDate(range: string): string {
+  const days: Record<string, number> = {
+    "1D": 7, // still request a week so a weekend doesn't return zero points
+    "5D": 10,
+    "1M": 31,
+    "3M": 92,
+    "6M": 183,
+    YTD: Math.max(1, Math.ceil((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000)),
+    "1Y": 366,
+    "5Y": 1827,
+    MAX: 9999, // Frankfurter clamps internally to its earliest available date
+  };
+  return isoDateDaysAgo(days[range] ?? 31);
+}
+
+interface FrankfurterTimeSeriesResponse {
+  rates?: Record<string, Record<string, number>>; // date -> { QUOTE: rate }
+}
+
+export async function fetchFrankfurterHistory(pair: string, range: string): Promise<PricePoint[]> {
+  const split = splitPair(pair);
+  if (!split) return [];
+  const { base, quote } = split;
+
+  const start = rangeToStartDate(range);
+  const url = new URL(`https://api.frankfurter.dev/v1/${start}..`);
+  url.searchParams.set("base", base);
+  url.searchParams.set("symbols", quote);
+
+  try {
+    const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
+    if (!res.ok) {
+      console.error(`[frankfurter] history ${res.status} for ${pair}`);
+      return [];
+    }
+
+    const data = (await res.json()) as FrankfurterTimeSeriesResponse;
+    if (!data.rates) return [];
+
+    return Object.entries(data.rates)
+      .map(([date, rates]) => ({ t: new Date(date).toISOString(), v: rates[quote] }))
+      .filter((p): p is { t: string; v: number } => typeof p.v === "number" && !Number.isNaN(p.v))
+      .sort((a, b) => a.t.localeCompare(b.t));
+  } catch (err) {
+    console.error(`[frankfurter] history fetch failed for ${pair}`, err);
+    return [];
+  }
 }

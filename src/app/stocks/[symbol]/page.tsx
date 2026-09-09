@@ -1,11 +1,12 @@
 import { getMarketDataProvider } from "@/lib/market-data";
 import type { Metadata } from "next";
 import { AdSlot } from "@/components/ads/ad-slot";
+import { PriceChart } from "@/components/charts/price-chart";
 
 export async function generateMetadata({
   params,
 }: {
-  params: { symbol: string };
+  params: Promise<{ symbol: string }>;
 }): Promise<Metadata> {
   const { symbol } = await params;
   const symbolUpper = symbol.toUpperCase();
@@ -15,13 +16,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function StockPage({ params }: { params: { symbol: string } }) {
+export default async function StockPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = await params;
   const symbolUpper = symbol.toUpperCase();
   const provider = getMarketDataProvider();
-  const [quote, fundamentals] = await Promise.all([
+  const [quote, fundamentals, history, news] = await Promise.all([
     provider.getQuote(symbolUpper),
     provider.getFundamentals(symbolUpper),
+    provider.getHistoricalPrices(symbolUpper, "3M", "STOCK"),
+    provider.getNews({ symbol: symbolUpper, limit: 3 }),
   ]);
 
   return (
@@ -42,9 +45,15 @@ export default async function StockPage({ params }: { params: { symbol: string }
         </div>
       </header>
 
-      {/* Chart placeholder — wire up TradingView Lightweight Charts in Phase 2 */}
-      <div className="mt-6 h-72 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-sm text-slate-400">
-        Historical chart (1D / 5D / 1M / 3M / 6M / YTD / 1Y / 5Y / MAX) — Phase 2
+      <div className="mt-6">
+        <PriceChart
+          symbol={symbolUpper}
+          market="STOCK"
+          initialRange="3M"
+          initialPoints={history}
+          decimals={2}
+          valuePrefix="$"
+        />
       </div>
 
       <section className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -58,6 +67,24 @@ export default async function StockPage({ params }: { params: { symbol: string }
       </section>
 
       <AdSlot placement="stock_sidebar" />
+
+      {news.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold text-navy-900">Related News</h2>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {news.map((item) => (
+              <li key={item.slug} className="py-3">
+                <a href={item.sourceUrl} className="text-sm font-medium text-navy-900 hover:underline">
+                  {item.headline}
+                </a>
+                <p className="mt-1 text-xs text-slate-400">
+                  {item.source} · {new Date(item.publishedAt).toLocaleDateString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-10 rounded-lg border border-slate-200 p-5">
         <p className="text-sm text-slate-700">
