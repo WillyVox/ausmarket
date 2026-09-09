@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { auth, signOut } from "@/auth";
 import { NewsletterSignupForm } from "@/components/newsletter-signup-form";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ausmarket.example.com";
 
@@ -65,6 +66,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        {/* Fixed to the viewport bottom, mobile only. Renders nothing
+            (no reserved space, no layout shift) unless an active
+            "mobile_sticky" AdPlacement row exists. */}
+        <div className="fixed inset-x-0 bottom-0 z-30 md:hidden">
+          <AdSlot placement="mobile_sticky" />
+        </div>
       </body>
     </html>
   );
@@ -154,6 +161,7 @@ function SiteFooter() {
           <a href="/methodology" className="block">Methodology</a>
           <a href="/how-we-make-money" className="block">How We Make Money</a>
           <a href="/affiliate-disclosure" className="block">Affiliate Disclosure</a>
+          <a href="/sponsored" className="block">Sponsored Content</a>
         </div>
         <div>
           <p className="mb-2 font-semibold text-slate-900">Legal</p>

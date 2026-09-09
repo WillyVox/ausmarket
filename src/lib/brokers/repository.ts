@@ -220,10 +220,8 @@ export async function getExchanges(): Promise<ExchangeRecord[]> {
 }
 
 export async function getBrokerBySlug(slug: string): Promise<BrokerRecord | null> {
-    console.log("slug in getBrokerBySlug ---------", slug);
   try {
-    console.log("await prisma ---------", await prisma);
-    const row = await prisma.broker?.findUnique({ where: { slug } });
+    const row = await prisma.broker.findUnique({ where: { slug } });
     if (row) return mapDbBroker(row);
     // Reachable DB genuinely has no such broker — check whether the
     // table has been seeded at all before deciding this is a real 404.
@@ -365,4 +363,99 @@ export async function getMethodologyStats(): Promise<MethodologyStats> {
     affiliateClicksLast30Days,
     generatedAt: new Date().toISOString(),
   };
+}
+
+// ---------- affiliate performance analytics (Phase 6, /admin/affiliate) ----------
+//
+// This deliberately stops at click counts. There is no conversion or
+// payout data source connected (no partner postback/API integration
+// exists), so CTR and revenue are NOT computed here — inventing them
+// from click counts alone would be exactly the fabricated-numbers
+// pattern this project has avoided everywhere else (market data,
+// verification dates, methodology). The admin page renders explicit
+// "unavailable" states for those instead of a guessed figure.
+
+export type AnalyticsWindow = 7 | 30 | 90 | 365;
+
+export interface PartnerClickBreakdown {
+  partnerType: string;
+  partnerSlug: string;
+  partnerName: string; // resolved via Broker/Exchange; falls back to the slug if not found
+  clicks: number;
+}
+
+export interface DimensionBreakdown {
+  key: string; // placement name, campaign name, or device type
+  clicks: number;
+}
+
+export interface AffiliateAnalytics {
+  windowDays: AnalyticsWindow;
+  totalClicks: number;
+  byPartner: PartnerClickBreakdown[];
+  byPlacement: DimensionBreakdown[];
+  byDevice: DimensionBreakdown[];
+  revenueAvailable: false; // always false until a payout data source exists — see comment above
+  ctrAvailable: false; // always false — no page-view tracking exists to compute CTR against
+}
+
+export async function getAffiliateAnalytics(windowDays: AnalyticsWindow): Promise<AffiliateAnalytics | null> {
+  const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+  try {
+    const clicks = await prisma.affiliateClick.findMany({
+      where: { timestamp: { gte: since } },
+      select: { partnerType: true, partnerSlug: true, placement: true, deviceType: true },
+    });
+
+    const [brokers, exchanges] = await Promise.all([getBrokers(), getExchanges()]);
+    const nameFor = (partnerType: string, partnerSlug: string): string => {
+      if (partnerType === "broker") return brokers.find((b) => b.slug === partnerSlug)?.name ?? partnerSlug;
+      if (partnerType === "exchange") return exchanges.find((e) => e.slug === partnerSlug)?.name ?? partnerSlug;
+      return partnerSlug;
+    };
+
+    const partnerCounts = new Map<string, PartnerClickBreakdown>();
+    const placementCounts = new Map<string, number>();
+    const deviceCounts = new Map<string, number>();
+
+    for (const click of clicks) {
+      const partnerKey = `${click.partnerType}:${click.partnerSlug}`;
+      const existing = partnerCounts.get(partnerKey);
+      if (existing) {
+        existing.clicks += 1;
+      } else {
+        partnerCounts.set(partnerKey, {
+          partnerType: click.partnerType,
+          partnerSlug: click.partnerSlug,
+          partnerName: nameFor(click.partnerType, click.partnerSlug),
+          clicks: 1,
+        });
+      }
+
+      const placementKey = click.placement || "unknown";
+      placementCounts.set(placementKey, (placementCounts.get(placementKey) ?? 0) + 1);
+
+      const deviceKey = click.deviceType || "unknown";
+      deviceCounts.set(deviceKey, (deviceCounts.get(deviceKey) ?? 0) + 1);
+    }
+
+    const toSortedBreakdown = (map: Map<string, number>): DimensionBreakdown[] =>
+      Array.from(map.entries())
+        .map(([key, count]) => ({ key, clicks: count }))
+        .sort((a, b) => b.clicks - a.clicks);
+
+    return {
+      windowDays,
+      totalClicks: clicks.length,
+      byPartner: Array.from(partnerCounts.values()).sort((a, b) => b.clicks - a.clicks),
+      byPlacement: toSortedBreakdown(placementCounts),
+      byDevice: toSortedBreakdown(deviceCounts),
+      revenueAvailable: false,
+      ctrAvailable: false,
+    };
+  } catch (err) {
+    console.error("[brokers/repository] Could not compute affiliate analytics:", err);
+    return null;
+  }
 }

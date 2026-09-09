@@ -1,6 +1,6 @@
 # Australian Market Intelligence + Trading Platform Comparison
 
-Phase 4 (Commercial Engine) slice, building on Phases 1–3. See
+Phase 6 (Monetization) slice, building on Phases 1–5. See
 `docs/roadmap.md` for the full phase plan and
 `docs/compliance-flags.md` for items that need legal sign-off before
 launch.
@@ -37,10 +37,58 @@ launch.
   before relying on it beyond local testing. Indices (ASX 200, All
   Ordinaries) are still mock regardless.
 
-## What's in this slice (Phase 4 — Commercial Engine)
+## What's in this slice (Phase 6 — Monetization)
 
-Building on Phase 3 (SEO engine + static comparison data), this pass
-moves the comparison content into the database and wires up real
+Building on Phase 5 (auth, watchlists, alerts, saved articles,
+newsletter), this pass adds an admin area and the three monetization
+surfaces from the roadmap:
+
+- **Admin access**: `User.role` (`USER`/`ADMIN`), checked by
+  `requireAdmin()` (`src/lib/auth/admin.ts`) on every `/admin/*`
+  route. There's no in-app way to grant the first admin — run
+  `npm run make:admin -- you@example.com` against an already-registered
+  account.
+- **`/admin/affiliate`**: click analytics by partner/placement/device
+  over 7/30/90/365-day windows. Revenue, conversions and CTR are
+  always shown as "Unavailable" — there is no payout/postback
+  integration or page-view tracking, and estimating them from click
+  counts alone would be exactly the kind of fabricated number this
+  project avoids everywhere else.
+- **`/admin/ads`** + **`<AdSlot />`**: `AdPlacement` (unused since
+  Phase 1) now has real creative fields. Only `provider: "house"`
+  (self-promotion, e.g. linking to `/compare/brokers`) renders
+  anything — no third-party ad network is connected. Wired into the
+  homepage, `/learn/[slug]`, `/stocks/[symbol]`, and a mobile-only
+  sticky slot.
+- **`/admin/sponsored`** + **`/sponsored`**: a genuine sponsored-content
+  workflow on top of the `Article` model (scaffolded in Phase 1,
+  unused until now). Every `/sponsored/[slug]` page carries a
+  disclosure banner that's hardcoded into the template, not a
+  per-post toggle. Seeded with one clearly-labelled placeholder post
+  — **unpublish or delete it before launch** (see
+  `docs/compliance-flags.md` item 10).
+
+Also fixed in this pass: a stray debug `console.log` left in
+`getBrokerBySlug` from earlier work.
+
+**Not yet built in Phase 6**: a real ad network integration, a
+payout/postback pipeline, page-view tracking, `AuditLog` writes for
+admin actions, and an in-app edit form for ad creative (currently via
+`prisma/seed.ts` or the database directly). See `docs/roadmap.md`.
+
+## Admin setup
+
+```
+npm run db:seed              # also seeds AdPlacement rows + one placeholder sponsored post
+# register a normal account at /register, then:
+npm run make:admin -- you@example.com
+# sign out and back in — role is baked into the JWT at sign-in
+```
+
+## What's in Phase 4 (Commercial Engine) — still current, unchanged this slice
+
+Building on Phase 3 (SEO engine + static comparison data), Phase 4
+moved the comparison content into the database and wired up real
 click tracking:
 
 - **Schema**: extended `Broker` with the fields the app actually
@@ -95,9 +143,10 @@ file. See `docs/roadmap.md`.
 
 Real historical charts, top gainers/losers/movers data, news
 ingestion, the full programmatic stock/forex/crypto template set
-beyond the current popular-stocks list, FAQ schema on tool pages, and
-everything in Phase 5 onward: auth/watchlists, admin CMS, analytics
-wiring, ad placements. See `docs/roadmap.md`.
+beyond the current popular-stocks list, FAQ schema on tool pages, a
+real ad network integration, payout/conversion tracking, and
+everything in Phase 7 (caching, CDN, additional data providers,
+security hardening, monitoring, load testing). See `docs/roadmap.md`.
 
 ## Running it
 
@@ -107,31 +156,49 @@ into a repo, then:
 
 ```
 npm install
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npm run db:seed
 npm run dev
 ```
 
-Without a running `DATABASE_URL`, the app still works — every broker/
-exchange page falls back to the bundled static content automatically
-and logs a warning explaining why (see `src/lib/brokers/repository.ts`).
+Without a running `DATABASE_URL`, the app still works for
+brokers/exchanges/methodology — they fall back to bundled static
+content automatically and log a warning explaining why. Auth, ads,
+sponsored content and analytics genuinely need a database, though —
+there's no static fallback for those (fabricating an ad, a sponsored
+post, or a user session would be a very different kind of problem
+than falling back to labelled sample market data).
 
-Because of the lack of network access in this environment, this
-session's changes were reviewed manually (brace/paren balance across
-every new/edited file, every internal `href` traced against an actual
-route, every import path checked for the old `@/lib/brokers/data`
-path) rather than machine-verified — run `npm run typecheck && npm
-run lint` yourself before trusting it fully, and specifically test:
-`/go/[an affiliate slug from static-data.ts]` redirects correctly,
-`/methodology` renders without a database configured, and `npm run
-db:seed` completes against a real Postgres instance.
+The Phase 6 migration (`prisma/migrations/20260909061500_phase6_monetization`)
+was hand-authored in this sandbox with no `DATABASE_URL`/network
+access, same as the Phase 4 migration before it — run
+`npx prisma migrate dev` locally and let Prisma reconcile/regenerate
+it against your actual schema drift before trusting it against a real
+database.
+
+Because of that same lack of network access, this session's changes
+were reviewed manually (brace/paren balance, every new import path
+checked, every internal `href` traced against an actual route) rather
+than machine-verified — run `npm run typecheck && npm run lint`
+yourself before trusting it fully. Specifically test:
+`/admin` (redirects to `/login` signed out, 404s for a signed-in
+non-admin, works after `make:admin`), `/admin/ads` toggle actually
+flips what `/` and `/learn/[slug]` render, `/admin/sponsored` publish
+flow round-trips to `/sponsored/[slug]`, and
+`npm run db:seed` completes against a real Postgres instance.
 
 # Step by step to run the app locally
 
 1. Set up local DB (with Docker)
 
-2. npm i
+2. `npm i`
 
-3. npx prisma migrate dev --name init
+3. `npx prisma migrate dev`
 
-4. npm run dev
+4. `npm run db:seed`
+
+5. `npm run dev`
+
+6. Register an account at `/register`, then in another terminal:
+   `npm run make:admin -- you@example.com`, then sign out/in on the
+   site to pick up the new role and visit `/admin`.

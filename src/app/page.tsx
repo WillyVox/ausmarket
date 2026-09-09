@@ -1,5 +1,6 @@
 import { getMarketDataProvider } from "@/lib/market-data";
 import type { Quote } from "@/lib/market-data/provider";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export default async function HomePage() {
   const provider = getMarketDataProvider();
@@ -12,6 +13,8 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
+      <AdSlot placement="homepage_top" />
+
       <section>
         <h1 className="text-2xl font-semibold text-navy-900">Market Snapshot</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -25,6 +28,8 @@ export default async function HomePage() {
           <SnapshotCard label="Bitcoin (AUD)" value={btc?.priceAud} change={btc?.change24h} status={btc?.status} />
         </div>
       </section>
+
+      <AdSlot placement="homepage_middle" />
 
       <section className="mt-14 grid gap-8 md:grid-cols-2">
         <div>

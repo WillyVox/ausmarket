@@ -31,6 +31,11 @@ enum CommissionType {
   UNKNOWN
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model SavedArticle {
   id          String   @id @default(cuid())
   userId      String
@@ -46,6 +51,7 @@ model User {
   email         String        @unique
   name          String?
   passwordHash  String?       // null if the account was ever created via a future OAuth flow
+  role          Role          @default(USER) // ADMIN gates /admin/* — see src/lib/auth/admin.ts
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   watchlists    Watchlist[]
@@ -70,6 +76,8 @@ model WatchlistItem {
   symbolType  String // "stock" | "forex" | "crypto"
   symbol      String
   addedAt     DateTime  @default(now())
+
+  @@unique([watchlistId, symbolType, symbol])
 }
 
 model UserAlert {
@@ -384,13 +392,27 @@ model Tag {
 
 // ---------- Ads / Data providers / Settings ----------
 
+// Ad inventory slots. `status: "active"` + a `provider: "house"` row
+// renders a clearly-labelled internal house ad (self-promotion —
+// e.g. pointing at /compare/brokers); no third-party ad network
+// script is wired up (no account/keys exist for one — see
+// docs/compliance-flags.md). Any other provider value currently
+// renders nothing rather than a broken/fake ad slot. See
+// src/lib/ads/repository.ts (the only module allowed to query this
+// table) and src/components/ads/ad-slot.tsx.
 model AdPlacement {
   id        String   @id @default(cuid())
   placement String   @unique // homepage_top, article_middle, etc.
-  type      String
-  provider  String
-  status    String   @default("inactive")
+  type      String // e.g. "house_ad", "display" (display is not yet wired to a network)
+  provider  String // "house" | future network name
+  status    String   @default("inactive") // "active" | "inactive"
   priority  Int      @default(0)
+  headline  String?
+  body      String?
+  ctaLabel  String?
+  ctaHref   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model DataProvider {

@@ -101,6 +101,98 @@ async function main() {
     console.log(`  ✓ ${seed.name}`);
   }
 
+  // ---------- Phase 6: ad placements ----------
+  // Only "homepage_middle" is seeded active, and only as a "house"
+  // (internal self-promotion) ad — there is no third-party ad
+  // network account configured, so seeding any other provider as
+  // "active" would be fabricating ad inventory that doesn't exist.
+  // See docs/compliance-flags.md.
+  const AD_PLACEMENTS: {
+    placement: string;
+    type: string;
+    provider: string;
+    status: "active" | "inactive";
+    headline?: string;
+    body?: string;
+    ctaLabel?: string;
+    ctaHref?: string;
+  }[] = [
+    {
+      placement: "homepage_top",
+      type: "house_ad",
+      provider: "house",
+      status: "inactive",
+    },
+    {
+      placement: "homepage_middle",
+      type: "house_ad",
+      provider: "house",
+      status: "active",
+      headline: "Comparing trading platforms?",
+      body: "See fees, features and regulatory info side by side — sourced and dated.",
+      ctaLabel: "Compare Platforms",
+      ctaHref: "/compare/brokers",
+    },
+    { placement: "article_middle", type: "house_ad", provider: "house", status: "inactive" },
+    { placement: "article_bottom", type: "house_ad", provider: "house", status: "inactive" },
+    { placement: "stock_sidebar", type: "house_ad", provider: "house", status: "inactive" },
+    { placement: "mobile_sticky", type: "house_ad", provider: "house", status: "inactive" },
+  ];
+
+  console.log(`Seeding ${AD_PLACEMENTS.length} ad placements...`);
+  for (const ad of AD_PLACEMENTS) {
+    await prisma.adPlacement.upsert({
+      where: { placement: ad.placement },
+      update: {
+        type: ad.type,
+        provider: ad.provider,
+        status: ad.status,
+        headline: ad.headline ?? null,
+        body: ad.body ?? null,
+        ctaLabel: ad.ctaLabel ?? null,
+        ctaHref: ad.ctaHref ?? null,
+      },
+      create: {
+        placement: ad.placement,
+        type: ad.type,
+        provider: ad.provider,
+        status: ad.status,
+        headline: ad.headline ?? null,
+        body: ad.body ?? null,
+        ctaLabel: ad.ctaLabel ?? null,
+        ctaHref: ad.ctaHref ?? null,
+      },
+    });
+    console.log(`  ✓ ${ad.placement} (${ad.status})`);
+  }
+
+  // ---------- Phase 6: one placeholder sponsored article ----------
+  // Demonstrates the /sponsored rendering path end-to-end. This is
+  // NOT a real commercial relationship — the sponsor name says so
+  // explicitly. Replace or remove before launch (see
+  // docs/compliance-flags.md item 10).
+  console.log("Seeding 1 placeholder sponsored article...");
+  await prisma.article.upsert({
+    where: { slug: "example-sponsored-post-placeholder" },
+    update: {},
+    create: {
+      slug: "example-sponsored-post-placeholder",
+      title: "Example Sponsored Post (Placeholder — Replace Before Launch)",
+      body:
+        "This is placeholder sponsored content seeded to demonstrate the /sponsored " +
+        "workflow end-to-end. It does not represent a real commercial relationship " +
+        "with any named or unnamed company. Remove this row (or unpublish it via " +
+        "/admin/sponsored) before this site goes live.",
+      author: "Example Sponsor Pty Ltd (placeholder — not a real partner)",
+      category: "Sponsored",
+      tags: ["placeholder"],
+      relatedSymbols: [],
+      label: "SPONSORED",
+      publishedAt: new Date(),
+    },
+  });
+  console.log("  ✓ example-sponsored-post-placeholder");
+
   console.log("Seed complete.");
 }
 

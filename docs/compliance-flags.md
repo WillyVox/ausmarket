@@ -82,3 +82,43 @@ before launch.
    still says so explicitly ("LEGAL REVIEW REQUIRED... the actual
    scoring process needs to be built"). Don't let the presence of real
    numbers be read as "the methodology is now implemented."
+
+10. **Seeded sponsored content is a placeholder.** `prisma/seed.ts`
+    creates one sponsored `Article` row
+    (`example-sponsored-post-placeholder`) purely to prove the
+    `/sponsored` rendering path end-to-end. Its title and sponsor name
+    say "placeholder" explicitly, but it is still live/published by
+    default once seeded. **Unpublish or delete it via
+    `/admin/sponsored` before any real launch** — leaving fictional
+    sponsor content published, even clearly labelled as a placeholder,
+    is not something a production site should ship with.
+
+11. **House ads are self-promotion only — no ad network is connected.**
+    `AdPlacement.provider: "house"` is the only value
+    `src/components/ads/ad-slot.tsx` currently renders, and it always
+    points at AusMarket's own pages (e.g. `/compare/brokers`), never a
+    third-party creative. There is no AdSense/GAM/other network
+    account, script, or consent-management wiring in this codebase.
+    Adding a real ad network is a distinct piece of work requiring its
+    own privacy-policy and cookie-consent updates (see item 6) before
+    it ships, not just a new `provider` string.
+
+12. **Admin bootstrap has no audit trail yet.** `scripts/set-admin.ts`
+    grants `ADMIN` directly against the database with no logging,
+    approval step, or notification. `AuditLog` exists in the schema
+    but nothing writes to it yet, including admin actions taken via
+    `/admin/ads` and `/admin/sponsored` (toggling an ad, publishing a
+    sponsored post). Before this app has more than one trusted
+    operator, admin actions should be written to `AuditLog` — this is
+    flagged as an operational/security gap, not just a legal one.
+
+13. **No revenue, conversion, or CTR data exists anywhere in the app.**
+    `/admin/affiliate` reports these as "Unavailable" rather than
+    computing them from click counts alone, and that is a deliberate,
+    permanent stance until real data sources exist — not a placeholder
+    to remove later without first connecting: (a) a payout/postback
+    integration per affiliate partner for revenue/conversions, and (b)
+    page-view tracking for CTR. Fabricating any of these three from
+    click data alone would materially misrepresent business
+    performance — the same category of risk as fabricating market
+    prices or verification dates elsewhere in this app.

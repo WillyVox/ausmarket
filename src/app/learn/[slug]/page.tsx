@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { ARTICLES } from "@/lib/learn/article";
 import { isArticleSaved } from "@/lib/saved-articles/repository";
 import { SaveArticleButton } from "@/components/account/save-article-button";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export function generateStaticParams() {
   return Object.keys(ARTICLES).map((slug) => ({ slug }));
@@ -26,7 +27,7 @@ export default async function LearnArticlePage({ params }: { params: { slug: str
 
   const session = await auth();
   const initiallySaved = session?.user
-    ? await isArticleSaved(session.user.id, params.slug)
+    ? await isArticleSaved(session.user.id, slug)
     : false;
 
   const articleJsonLd = {
@@ -46,7 +47,7 @@ export default async function LearnArticlePage({ params }: { params: { slug: str
       <div className="flex items-start justify-between gap-4">
         <h1 className="text-2xl font-semibold text-navy-900">{article.title}</h1>
         <SaveArticleButton
-          articleSlug={params.slug}
+          articleSlug={slug}
           initiallySaved={initiallySaved}
           signedIn={Boolean(session?.user)}
         />
@@ -56,6 +57,8 @@ export default async function LearnArticlePage({ params }: { params: { slug: str
           <p key={i}>{p}</p>
         ))}
       </div>
+
+      <AdSlot placement="article_middle" />
 
       {article.related.length > 0 && (
         <section className="mt-8 border-t border-slate-100 pt-6">
@@ -74,6 +77,8 @@ export default async function LearnArticlePage({ params }: { params: { slug: str
           </ul>
         </section>
       )}
+
+      <AdSlot placement="article_bottom" />
 
       <p className="mt-8 text-xs text-slate-400">
         General information only, not personal financial advice.

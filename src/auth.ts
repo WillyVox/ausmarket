@@ -42,18 +42,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, role: user.role };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.userId = user.id;
+      if (user) {
+        token.userId = user.id;
+        // `user` here is whatever authorize() returned, which is not
+        // typed against our Prisma Role enum — narrow defensively so
+        // a bad/missing value can never silently grant ADMIN.
+        token.role = (user as { role?: unknown }).role === "ADMIN" ? "ADMIN" : "USER";
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user && typeof token.userId === "string") {
         session.user.id = token.userId;
+        session.user.role = token.role === "ADMIN" ? "ADMIN" : "USER";
       }
       return session;
     },

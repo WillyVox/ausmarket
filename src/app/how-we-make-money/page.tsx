@@ -12,7 +12,12 @@ export default function HowWeMakeMoneyPage() {
           <a href="/affiliate-disclosure" className="underline">affiliate disclosure</a>.
         </li>
         <li><strong>Display advertising</strong> — clearly labelled, never affecting content.</li>
-        <li><strong>Sponsored content</strong> — always labelled "Sponsored".</li>
+        <li>
+          <strong>Sponsored content</strong> — always labelled "Sponsored" with a
+          non-removable disclosure banner, and kept at{" "}
+          <a href="/sponsored" className="underline">a separate URL</a> from our
+          independent editorial content.
+        </li>
         <li>
           <strong>Future: premium tools, data products, newsletter
           sponsorship</strong> — not yet live.

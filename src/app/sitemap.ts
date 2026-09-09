@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getBrokers, getExchanges } from "@/lib/brokers/repository";
 import { POPULAR_STOCKS } from "@/lib/stocks/data";
+import { getPublishedSponsoredArticles } from "@/lib/content/repository";
 
 // Static + programmatic routes. As real content sources (CMS articles,
 // a full symbol database) come online in later phases, extend this
@@ -42,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/editorial-policy",
     "/methodology",
     "/how-we-make-money",
+    "/sponsored",
   ].map((path) => ({
     url: `${SITE_URL}${path}`,
     lastModified: new Date(),
@@ -64,5 +66,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(),
   }));
 
-  return [...staticRoutes, ...stockRoutes, ...brokerRoutes, ...exchangeRoutes];
+  const sponsoredArticles = await getPublishedSponsoredArticles();
+  const sponsoredRoutes = sponsoredArticles.map((a) => ({
+    url: `${SITE_URL}/sponsored/${a.slug}`,
+    lastModified: a.publishedAt ? new Date(a.publishedAt) : new Date(),
+  }));
+
+  return [...staticRoutes, ...stockRoutes, ...brokerRoutes, ...exchangeRoutes, ...sponsoredRoutes];
 }

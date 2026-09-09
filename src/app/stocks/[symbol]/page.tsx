@@ -1,5 +1,6 @@
 import { getMarketDataProvider } from "@/lib/market-data";
 import type { Metadata } from "next";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export async function generateMetadata({
   params,
@@ -55,6 +56,8 @@ export default async function StockPage({ params }: { params: { symbol: string }
         <Stat label="52W Low" value={fundamentals?.week52Low} />
         <Stat label="Avg Volume" value={fundamentals?.avgVolume} />
       </section>
+
+      <AdSlot placement="stock_sidebar" />
 
       <section className="mt-10 rounded-lg border border-slate-200 p-5">
         <p className="text-sm text-slate-700">

@@ -8,7 +8,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const exchange = await getExchangeBySlug(params.slug);
+  const { slug } = await params;
+  const exchange = await getExchangeBySlug(slug);
   if (!exchange) return { title: "Exchange not found" };
   return {
     title: `${exchange.name} Review & Fees`,
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function ExchangePage({ params }: { params: { slug: string } }) {
-  const exchange = await getExchangeBySlug(params.slug);
+  const { slug } = await params;
+  const exchange = await getExchangeBySlug(slug);
   if (!exchange) notFound();
 
   const allExchanges = await getExchanges();

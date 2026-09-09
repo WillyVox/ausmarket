@@ -87,15 +87,68 @@ today is descriptive + transparency counts, not a computed score),
 and an admin UI for editing `Broker`/`Exchange` rows without touching
 the seed file directly.
 
-## Phase 5 — Retention
-Auth.js integration, watchlists, alerts, newsletter signup, saved
-articles.
+## Phase 5 — Retention ✅
+- Auth.js v5, credentials (email + password) provider, JWT session
+  strategy — no adapter, so no `Account`/`Session`/`VerificationToken`
+  tables were needed, just `User.passwordHash`. `/login` and
+  `/register` pages, `/api/auth/register` for account creation
+  (Credentials has no built-in sign-up flow).
+- `Watchlist`/`WatchlistItem` (already in the schema since Phase 1)
+  wired up for real via `src/lib/watchlist/repository.ts` and
+  `/api/watchlist`; `UserAlert` similarly via
+  `src/lib/alerts/repository.ts` and `/api/alerts`.
+- New `SavedArticle` model (references `/learn` content by slug, not
+  a DB row — the education articles are still static, see
+  `src/lib/learn/article.ts`) and `NewsletterSubscriber`, each with
+  their own repository + API route.
+- Header now reads the session server-side to show Sign in/Sign out
+  — no client-side `SessionProvider` needed just for that.
 
-## Phase 6 — Monetization
-Affiliate analytics dashboard, ad placements (clearly labelled),
-sponsored content workflow, partner performance reporting (revenue
-numbers only ever shown when a real data source backs them —
-otherwise "Revenue data unavailable").
+## Phase 6 — Monetization ✅ (this slice)
+- **Admin gating**: `User.role` (`USER` | `ADMIN`), baked into the JWT
+  at sign-in. `requireAdmin()` (`src/lib/auth/admin.ts`) guards every
+  `/admin/*` page — redirects signed-out visitors to `/login`,
+  `notFound()`s signed-in non-admins. No in-app way to grant the
+  first admin (an admin-only page can't bootstrap itself) — use
+  `npm run make:admin -- you@example.com` after registering normally.
+- **Affiliate analytics dashboard** (`/admin/affiliate`): clicks by
+  partner/placement/device over 7/30/90/365-day windows, computed
+  from `AffiliateClick` via a new `getAffiliateAnalytics()` in
+  `src/lib/brokers/repository.ts` (kept there rather than a new
+  module, since that file already owns exclusive access to that
+  table). Revenue, conversions and CTR are always shown as
+  "Unavailable" — deliberately never estimated from click counts
+  alone, since no payout/postback integration or page-view tracking
+  exists (see `docs/compliance-flags.md` item 13).
+- **Ad placements**: `AdPlacement` (unused since Phase 1) extended
+  with actual creative fields (`headline`/`body`/`ctaLabel`/
+  `ctaHref`) — it previously had nowhere to put ad content at all.
+  New `src/lib/ads/repository.ts` + `<AdSlot placement="..." />`
+  component render a clearly-labelled "Advertisement" box for active
+  `provider: "house"` rows only, and nothing at all otherwise — no
+  third-party ad network is wired up (see compliance-flags item 11).
+  Wired into `homepage_top`/`homepage_middle`, `article_middle`/
+  `article_bottom` (`/learn/[slug]`), `stock_sidebar`
+  (`/stocks/[symbol]`), and a mobile-only `mobile_sticky` slot in
+  `layout.tsx`. `/admin/ads` lets an admin toggle each slot on/off.
+- **Sponsored content workflow**: the `Article` model (scaffolded in
+  Phase 1, never read or written until now) is the sponsored-content
+  store, via new `src/lib/content/repository.ts`. `/admin/sponsored`
+  creates/publishes posts; `/sponsored` and `/sponsored/[slug]` are
+  the public pages, the latter with a disclosure banner that is
+  hardcoded into the template (not a per-post toggle) so it can't be
+  turned off. Seeded with exactly one clearly-flagged placeholder
+  post to prove the path works — see compliance-flags item 10, this
+  needs to be removed before launch.
+- Fixed a stray debug `console.log` left in `getBrokerBySlug`.
+
+**Not yet built in Phase 6**: a real ad-network integration (AdSense/
+GAM or similar — needs its own account, script, and consent-management
+work), payout/postback integration per affiliate partner (blocks real
+revenue/conversion reporting), page-view tracking (blocks CTR), an
+`AuditLog` write path for admin actions, and an edit form for ad
+creative (currently edited via `prisma/seed.ts` or directly in the
+database).
 
 ## Phase 7 — Scale
 Caching (Redis), CDN tuning, additional data providers, security
